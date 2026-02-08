@@ -1,0 +1,33 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+
+meta:
+  access-token: ${META_ACCESS_TOKEN}
+  pixel-id: ${META_PIXEL_ID}
+
+google:
+  ads:
+    conversion-id: ${GOOGLE_ADS_CONVERSION_ID}
+    conversion-label: ${GOOGLE_ADS_CONVERSION_LABEL}
+
+pipedrive:
+  api-token: ${PIPEDRIVE_API_TOKEN}
+
+app:
+  checkout:
+    success-url: ${CHECKOUT_SUCCESS_URL}
+    cancel-url: ${CHECKOUT_CANCEL_URL}
+
+  stripe:
+    price-ids:
+      INCORPORATION_BASIC: ${STRIPE_PRICE_INCORPORATION_BASIC}
+      INCORPORATION_PREMIUM: ${STRIPE_PRICE_INCORPORATION_PREMIUM}
+      ACCOUNTING_MONTHLY: ${STRIPE_PRICE_ACCOUNTING_MONTHLY}
