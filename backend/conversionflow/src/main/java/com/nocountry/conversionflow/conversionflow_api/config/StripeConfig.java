@@ -1,8 +1,10 @@
-package com.nocountry.conversionflow.conversionflow_api.config.properties;
+package com.nocountry.conversionflow.conversionflow_api.config;
 
 import com.stripe.Stripe;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+
+import com.nocountry.conversionflow.conversionflow_api.config.properties.StripeProperties;
 
 @Configuration
 @EnableConfigurationProperties(StripeProperties.class)

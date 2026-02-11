@@ -1,4 +1,4 @@
-package com.nocountry.conversionflow.conversionflow_api.config;
+package com.nocountry.conversionflow.conversionflow_api.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
