@@ -4,13 +4,19 @@ server:
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+
   datasource:
-    url: ${PG_URL}
-    username: ${PG_USERNAME}
-    password: ${PG_PASSWORD}
+    url: jdbc:postgresql://localhost:5432/conversionflow
+    username: postgres
+    password: admin
+    driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
 
 stripe:
   secret-key: ${STRIPE_SECRET_KEY}
@@ -38,8 +44,3 @@ app:
       INCORPORATION_BASIC: ${STRIPE_PRICE_INCORPORATION_BASIC}
       INCORPORATION_PREMIUM: ${STRIPE_PRICE_INCORPORATION_PREMIUM}
       ACCOUNTING_MONTHLY: ${STRIPE_PRICE_ACCOUNTING_MONTHLY}
-
-  spring:
-    jpa:
-      hibernate:
-        ddl-auto: update

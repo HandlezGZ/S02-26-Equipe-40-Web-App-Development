@@ -1,8 +1,18 @@
 spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/conversionflow
+    username: postgres
+    password: admin
+    driver-class-name: org.postgresql.Driver
+
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
+
+checkout:
+  success-url: http://localhost:3000/sucesso
+  cancel-url: http://localhost:3000/cancelado

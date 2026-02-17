@@ -1,6 +1,7 @@
 package com.nocountry.conversionflow.conversionflow_api.config.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
 /**
  * Carrega configs do Stripe vindas do application.yml,

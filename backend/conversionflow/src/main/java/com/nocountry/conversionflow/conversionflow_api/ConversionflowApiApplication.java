@@ -1,8 +1,11 @@
 package com.nocountry.conversionflow.conversionflow_api;
 
+import com.nocountry.conversionflow.conversionflow_api.config.properties.StripeProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
+@EnableConfigurationProperties(StripeProperties.class)
 @SpringBootApplication
 public class ConversionflowApiApplication {
 
