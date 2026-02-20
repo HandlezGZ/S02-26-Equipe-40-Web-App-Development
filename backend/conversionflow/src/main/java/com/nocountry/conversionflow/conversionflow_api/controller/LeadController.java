@@ -1,6 +1,6 @@
 package com.nocountry.conversionflow.conversionflow_api.controller;
 
-import com.nocountry.conversionflow.conversionflow_api.controller.dto.CreateLeadRequest;
+import com.nocountry.conversionflow.conversionflow_api.controller.dto.CreateLeadRequestDTO;
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.Lead;
 import com.nocountry.conversionflow.conversionflow_api.service.LeadService;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +17,7 @@ public class LeadController {
     }
 
     @PostMapping
-    public ResponseEntity<Lead> createLead(@RequestBody CreateLeadRequest request) {
+    public ResponseEntity<Lead> createLead(@RequestBody CreateLeadRequestDTO request) {
 
         Lead lead = leadService.createLead(
                 request.externalId(),
