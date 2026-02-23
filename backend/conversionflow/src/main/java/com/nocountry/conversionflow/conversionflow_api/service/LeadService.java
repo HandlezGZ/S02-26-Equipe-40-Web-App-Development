@@ -1,11 +1,8 @@
 package com.nocountry.conversionflow.conversionflow_api.service;
 
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.Lead;
-import com.nocountry.conversionflow.conversionflow_api.domain.enums.LeadStatus;
-import com.nocountry.conversionflow.conversionflow_api.repository.LeadRepository;
+import com.nocountry.conversionflow.conversionflow_api.domain.repository.LeadRepository;
 import org.springframework.stereotype.Service;
-
-import java.time.OffsetDateTime;
 
 @Service
 public class LeadService {
@@ -16,17 +13,14 @@ public class LeadService {
         this.leadRepository = leadRepository;
     }
 
-    public Lead createLead(String externalId, String email) {
+    public Lead createLead(String externalId, String email, String gclid, String fbclid, String fbp, String fbc) {
 
         if (leadRepository.existsByExternalId(externalId)) {
             throw new RuntimeException("Lead already exists with this externalId");
         }
 
-        Lead lead = new Lead();
-        lead.setExternalId(externalId);
-        lead.setEmail(email);
-        lead.setStatus(LeadStatus.NEW);
-        lead.setCreatedAt(OffsetDateTime.now());
+        Lead lead = new Lead(externalId, email);
+        lead.updateTracking(gclid, fbclid, fbp, fbc);
 
         return leadRepository.save(lead);
     }

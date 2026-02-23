@@ -1,5 +1,5 @@
 package
-com.nocountry.conversionflow.conversionflow_api.repository;
+com.nocountry.conversionflow.conversionflow_api.domain.repository;
 
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.Conversion;
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.Lead;

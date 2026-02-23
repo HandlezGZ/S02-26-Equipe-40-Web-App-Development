@@ -3,28 +3,73 @@ package com.nocountry.conversionflow.conversionflow_api.config.properties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-/**
- * Carrega configs do Stripe vindas do application.yml,
- * que por sua vez vem de variáveis de ambiente.
- *
- * Vantagem: tipado, organizado e sem hardcode.
- */
+import java.util.Map;
+
 @ConfigurationProperties(prefix = "stripe")
 public class StripeProperties {
 
-    /**
-     * STRIPE_SECRET_KEY (sk_test_... / sk_live_...)
-     */
     private String secretKey;
-
-    /**
-     * STRIPE_WEBHOOK_SECRET (whsec_...)
-     */
     private String webhookSecret;
 
-    public String getSecretKey() { return secretKey; }
-    public void setSecretKey(String secretKey) { this.secretKey = secretKey; }
+    private String successUrl;
+    private String cancelUrl;
 
-    public String getWebhookSecret() { return webhookSecret; }
-    public void setWebhookSecret(String webhookSecret) { this.webhookSecret = webhookSecret; }
+    /**
+     * Ex: "usd"
+     */
+    private String currency = "usd";
+
+    /**
+     * stripe.prices.basic=price_...
+     * stripe.prices.pro=price_...
+     */
+    private Map<String, String> prices;
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    }
+
+    public String getWebhookSecret() {
+        return webhookSecret;
+    }
+
+    public void setWebhookSecret(String webhookSecret) {
+        this.webhookSecret = webhookSecret;
+    }
+
+    public String getSuccessUrl() {
+        return successUrl;
+    }
+
+    public void setSuccessUrl(String successUrl) {
+        this.successUrl = successUrl;
+    }
+
+    public String getCancelUrl() {
+        return cancelUrl;
+    }
+
+    public void setCancelUrl(String cancelUrl) {
+        this.cancelUrl = cancelUrl;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public Map<String, String> getPrices() {
+        return prices;
+    }
+
+    public void setPrices(Map<String, String> prices) {
+        this.prices = prices;
+    }
 }

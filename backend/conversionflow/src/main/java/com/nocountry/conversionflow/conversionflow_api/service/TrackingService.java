@@ -4,7 +4,7 @@ import com.nocountry.conversionflow.conversionflow_api.domain.entity.Lead;
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.Payment;
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.TrackingEvent;
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.TrackingEventType;
-import com.nocountry.conversionflow.conversionflow_api.repository.TrackingEventRepository;
+import com.nocountry.conversionflow.conversionflow_api.domain.repository.TrackingEventRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

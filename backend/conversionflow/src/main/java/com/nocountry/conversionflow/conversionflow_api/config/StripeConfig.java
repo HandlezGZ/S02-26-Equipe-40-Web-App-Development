@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration;
 import com.nocountry.conversionflow.conversionflow_api.config.properties.StripeProperties;
 
 @Configuration
-@EnableConfigurationProperties(StripeProperties.class)
 public class StripeConfig {
 
     /**

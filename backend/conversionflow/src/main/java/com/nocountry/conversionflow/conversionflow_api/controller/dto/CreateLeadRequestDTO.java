@@ -10,6 +10,11 @@ public record CreateLeadRequestDTO(
 
         @Email(message = "Invalid email format")
         @NotBlank(message = "Email is required")
-        String email
+        String email,
+
+        String gclid,
+        String fbclid,
+        String fbp,
+        String fbc
 
 ) {}

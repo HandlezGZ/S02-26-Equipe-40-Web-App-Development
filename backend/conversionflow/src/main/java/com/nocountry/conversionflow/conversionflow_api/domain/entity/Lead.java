@@ -3,6 +3,7 @@ package com.nocountry.conversionflow.conversionflow_api.domain.entity;
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.LeadStatus;
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -23,11 +24,36 @@ public class Lead {
     @Column(nullable = false)
     private LeadStatus status;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
-    public Lead() {
-    }
+    // Tracking
+    @Column(name = "gclid")
+    private String gclid;
+
+    @Column(name = "fbclid")
+    private String fbclid;
+
+    @Column(name = "fbp")
+    private String fbp;
+
+    @Column(name = "fbc")
+    private String fbc;
+
+    @Column(name = "utm_source")
+    private String utmSource;
+
+    @Column(name = "utm_campaign")
+    private String utmCampaign;
+
+    // Conversão
+    @Column(name = "converted_at")
+    private OffsetDateTime convertedAt;
+
+    @Column(name = "converted_amount", precision = 15, scale = 2)
+    private BigDecimal convertedAmount;
+
+    protected Lead() { }
 
     public Lead(String externalId, String email) {
         this.externalId = externalId;
@@ -36,41 +62,48 @@ public class Lead {
         this.createdAt = OffsetDateTime.now();
     }
 
-    // Getters e Setters
+    // ===== Domain methods =====
 
-    public Long getId() {
-        return id;
+    public void startCheckout() {
+        if (this.status == LeadStatus.NEW) {
+            this.status = LeadStatus.CHECKOUT_STARTED;
+        }
     }
 
-    public String getExternalId() {
-        return externalId;
+    public void markAsWon(BigDecimal amount) {
+        this.status = LeadStatus.WON;
+        this.convertedAt = OffsetDateTime.now();
+        this.convertedAmount = amount;
     }
 
-    public void setExternalId(String externalId) {
-        this.externalId = externalId;
+    public boolean isWon() {
+        return this.status == LeadStatus.WON;
     }
 
-    public String getEmail() {
-        return email;
+    public void updateTracking(String gclid, String fbclid, String fbp, String fbc) {
+        if (gclid != null && !gclid.isBlank()) this.gclid = gclid;
+        if (fbclid != null && !fbclid.isBlank()) this.fbclid = fbclid;
+        if (fbp != null && !fbp.isBlank()) this.fbp = fbp;
+        if (fbc != null && !fbc.isBlank()) this.fbc = fbc;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    // ===== Getters =====
 
-    public LeadStatus getStatus() {
-        return status;
-    }
+    public Long getId() { return id; }
+    public String getExternalId() { return externalId; }
+    public String getEmail() { return email; }
+    public LeadStatus getStatus() { return status; }
+    public OffsetDateTime getCreatedAt() { return createdAt; }
 
-    public void setStatus(LeadStatus status) {
-        this.status = status;
-    }
+    public String getGclid() { return gclid; }
+    public String getFbclid() { return fbclid; }
+    public String getFbp() { return fbp; }
+    public String getFbc() { return fbc; }
+    public String getUtmSource() { return utmSource; }
+    public String getUtmCampaign() { return utmCampaign; }
 
-    public OffsetDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public OffsetDateTime getConvertedAt() { return convertedAt; }
+    public BigDecimal getConvertedAmount() { return convertedAmount; }
 
-    public void setCreatedAt(OffsetDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    public void setStatus(LeadStatus status) { this.status = status; }
 }

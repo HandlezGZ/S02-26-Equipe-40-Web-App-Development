@@ -1,29 +1,42 @@
 package com.nocountry.conversionflow.conversionflow_api.controller;
 
-import com.nocountry.conversionflow.conversionflow_api.service.StripeService;
+import com.nocountry.conversionflow.conversionflow_api.controller.dto.CheckoutRequest;
+import com.nocountry.conversionflow.conversionflow_api.controller.dto.CheckoutResponse;
+import com.nocountry.conversionflow.conversionflow_api.service.stripe.StripeWebhookService;
+import com.stripe.exception.StripeException;
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/checkout")
 public class CheckoutController {
 
-    private final StripeService stripeService;
+    private static final Logger log = LoggerFactory.getLogger(CheckoutController.class);
 
-    public CheckoutController(StripeService stripeService) {
-        this.stripeService = stripeService;
+    private final StripeWebhookService stripeWebhookService;
+
+    public CheckoutController(StripeWebhookService stripeWebhookService) {
+        this.stripeWebhookService = stripeWebhookService;
     }
 
     @PostMapping
-    public ResponseEntity<String> createCheckout(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<CheckoutResponse> createCheckout(@Valid @RequestBody CheckoutRequest request)
+            throws StripeException {
 
-        Long leadId = Long.valueOf(request.get("leadId").toString());
-        String plan = request.get("plan").toString();
+        log.info("Creating checkout. leadId={}, plan={}", request.getLeadId(), request.getPlan());
 
-        String checkoutUrl = stripeService.createCheckoutSession(leadId, plan);
+        String url = stripeWebhookService.createCheckoutSession(
+                request.getLeadId(),
+                request.getPlan(),
+                request.getGclid(),
+                request.getFbclid(),
+                request.getFbp(),
+                request.getFbc()
+        );
 
-        return ResponseEntity.ok(checkoutUrl);
+        return ResponseEntity.ok(new CheckoutResponse(url));
     }
 }
