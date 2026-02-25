@@ -2,16 +2,17 @@ package com.nocountry.conversionflow.conversionflow_api.application.usecase;
 
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.ConversionDispatch;
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.DispatchStatus;
+import com.nocountry.conversionflow.conversionflow_api.domain.enums.Provider;
 import com.nocountry.conversionflow.conversionflow_api.domain.repository.ConversionDispatchRepository;
-import com.nocountry.conversionflow.conversionflow_api.service.google.GoogleConversionsService;
-import com.nocountry.conversionflow.conversionflow_api.service.meta.MetaConversionsService;
-import com.nocountry.conversionflow.conversionflow_api.service.pipedrive.PipedriveService;
+import com.nocountry.conversionflow.conversionflow_api.service.dispatch.DispatchProviderHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Component
@@ -21,20 +22,17 @@ public class ProcessDispatchQueueUseCase {
     private static final int MAX_ATTEMPTS = 5;
 
     private final ConversionDispatchRepository repository;
-    private final GoogleConversionsService googleService;
-    private final MetaConversionsService metaService;
-    private final PipedriveService pipedriveService;
+    private final Map<Provider, DispatchProviderHandler> providerHandlers;
 
     public ProcessDispatchQueueUseCase(
             ConversionDispatchRepository repository,
-            GoogleConversionsService googleService,
-            MetaConversionsService metaService,
-            PipedriveService pipedriveService
+            List<DispatchProviderHandler> providerHandlers
     ) {
         this.repository = repository;
-        this.googleService = googleService;
-        this.metaService = metaService;
-        this.pipedriveService = pipedriveService;
+        this.providerHandlers = new EnumMap<>(Provider.class);
+        for (DispatchProviderHandler providerHandler : providerHandlers) {
+            this.providerHandlers.put(providerHandler.provider(), providerHandler);
+        }
     }
 
     @Transactional
@@ -69,11 +67,11 @@ public class ProcessDispatchQueueUseCase {
                         dispatch.getStatus(),
                         dispatch.getAttemptCount());
 
-                switch (dispatch.getProvider()) {
-                    case GOOGLE -> googleService.sendConversionFromPayload(dispatch.getPayload());
-                    case META -> metaService.sendConversionFromPayload(dispatch.getPayload());
-                    case PIPEDRIVE -> pipedriveService.syncFromPayload(dispatch.getPayload());
+                DispatchProviderHandler providerHandler = providerHandlers.get(dispatch.getProvider());
+                if (providerHandler == null) {
+                    throw new IllegalStateException("No handler configured for provider " + dispatch.getProvider());
                 }
+                providerHandler.dispatch(dispatch.getPayload());
 
                 dispatch.markSuccess();
                 successCount++;

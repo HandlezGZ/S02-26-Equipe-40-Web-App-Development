@@ -1,14 +1,16 @@
 package com.nocountry.conversionflow.conversionflow_api.service.meta;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nocountry.conversionflow.conversionflow_api.domain.enums.Provider;
 import com.nocountry.conversionflow.conversionflow_api.domain.event.LeadConvertedEvent;
 import com.nocountry.conversionflow.conversionflow_api.infrastructure.meta.MetaApiClient;
+import com.nocountry.conversionflow.conversionflow_api.service.dispatch.DispatchProviderHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
-public class MetaConversionsService {
+public class MetaConversionsService implements DispatchProviderHandler {
 
     private static final Logger log = LoggerFactory.getLogger(MetaConversionsService.class);
 
@@ -18,6 +20,16 @@ public class MetaConversionsService {
     public MetaConversionsService(MetaApiClient metaApiClient, ObjectMapper objectMapper) {
         this.metaApiClient = metaApiClient;
         this.objectMapper = objectMapper;
+    }
+
+    @Override
+    public Provider provider() {
+        return Provider.META;
+    }
+
+    @Override
+    public void dispatch(String payload) {
+        sendConversionFromPayload(payload);
     }
 
     public void sendConversionFromPayload(String payload) {
