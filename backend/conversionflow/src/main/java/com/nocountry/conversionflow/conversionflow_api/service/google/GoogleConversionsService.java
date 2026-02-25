@@ -1,13 +1,15 @@
 package com.nocountry.conversionflow.conversionflow_api.service.google;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nocountry.conversionflow.conversionflow_api.domain.enums.Provider;
 import com.nocountry.conversionflow.conversionflow_api.domain.event.LeadConvertedEvent;
+import com.nocountry.conversionflow.conversionflow_api.service.dispatch.DispatchProviderHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
-public class GoogleConversionsService {
+public class GoogleConversionsService implements DispatchProviderHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GoogleConversionsService.class);
 
@@ -15,6 +17,16 @@ public class GoogleConversionsService {
 
     public GoogleConversionsService(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
+    }
+
+    @Override
+    public Provider provider() {
+        return Provider.GOOGLE;
+    }
+
+    @Override
+    public void dispatch(String payload) {
+        sendConversionFromPayload(payload);
     }
 
     public void sendConversionFromPayload(String payload) {
