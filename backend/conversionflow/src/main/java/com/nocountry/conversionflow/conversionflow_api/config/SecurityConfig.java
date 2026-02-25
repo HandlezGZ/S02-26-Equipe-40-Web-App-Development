@@ -21,6 +21,7 @@ public class SecurityConfig {
                                 "/leads/**",
                                 "/checkout/**",        // ✅ libera tudo em /checkout/*
                                 "/webhooks/stripe",     // webhook exato
+                                "/health",
                                 "/error"
                         ).permitAll()
                         .anyRequest().authenticated()
