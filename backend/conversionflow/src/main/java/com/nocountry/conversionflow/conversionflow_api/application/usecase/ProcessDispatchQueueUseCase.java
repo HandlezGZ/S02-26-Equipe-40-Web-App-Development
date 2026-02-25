@@ -1,5 +1,6 @@
 package com.nocountry.conversionflow.conversionflow_api.application.usecase;
 
+import com.nocountry.conversionflow.conversionflow_api.config.properties.DispatchRetryProperties;
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.ConversionDispatch;
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.DispatchStatus;
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.Provider;
@@ -19,16 +20,18 @@ import java.util.UUID;
 public class ProcessDispatchQueueUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(ProcessDispatchQueueUseCase.class);
-    private static final int MAX_ATTEMPTS = 5;
 
     private final ConversionDispatchRepository repository;
+    private final DispatchRetryProperties dispatchRetryProperties;
     private final Map<Provider, DispatchProviderHandler> providerHandlers;
 
     public ProcessDispatchQueueUseCase(
             ConversionDispatchRepository repository,
+            DispatchRetryProperties dispatchRetryProperties,
             List<DispatchProviderHandler> providerHandlers
     ) {
         this.repository = repository;
+        this.dispatchRetryProperties = dispatchRetryProperties;
         this.providerHandlers = new EnumMap<>(Provider.class);
         for (DispatchProviderHandler providerHandler : providerHandlers) {
             this.providerHandlers.put(providerHandler.provider(), providerHandler);
@@ -51,10 +54,14 @@ public class ProcessDispatchQueueUseCase {
 
         for (ConversionDispatch dispatch : dispatches) {
 
-            if (!dispatch.canRetry(MAX_ATTEMPTS)) {
+            if (!dispatch.canRetry(dispatchRetryProperties.getMaxAttempts())) {
                 skippedMaxAttemptsCount++;
                 log.warn("dispatch.skipped.maxAttempts cycleId={} dispatchId={} provider={} attempts={} maxAttempts={}",
-                        cycleId, dispatch.getId(), dispatch.getProvider(), dispatch.getAttemptCount(), MAX_ATTEMPTS);
+                        cycleId,
+                        dispatch.getId(),
+                        dispatch.getProvider(),
+                        dispatch.getAttemptCount(),
+                        dispatchRetryProperties.getMaxAttempts());
                 continue;
             }
 

@@ -15,7 +15,7 @@ public class ConversionDispatchScheduler {
         this.processDispatchQueueUseCase = processDispatchQueueUseCase;
     }
 
-    @Scheduled(fixedDelay = 60000)
+    @Scheduled(fixedDelayString = "${dispatch.retry.interval-ms:60000}")
     public void processPendingDispatches() {
         processDispatchQueueUseCase.execute();
     }
