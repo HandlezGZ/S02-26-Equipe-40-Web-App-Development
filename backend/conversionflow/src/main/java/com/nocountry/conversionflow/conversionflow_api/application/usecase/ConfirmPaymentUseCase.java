@@ -7,6 +7,7 @@ import com.nocountry.conversionflow.conversionflow_api.domain.enums.PaymentStatu
 import com.nocountry.conversionflow.conversionflow_api.domain.event.LeadConvertedEvent;
 import com.nocountry.conversionflow.conversionflow_api.domain.repository.LeadRepository;
 import com.nocountry.conversionflow.conversionflow_api.domain.repository.PaymentRepository;
+import com.nocountry.conversionflow.conversionflow_api.domain.service.LeadConversionService;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
@@ -30,17 +31,20 @@ public class ConfirmPaymentUseCase {
     private final StripeProperties stripeProperties;
     private final LeadRepository leadRepository;
     private final PaymentRepository paymentRepository;
+    private final LeadConversionService leadConversionService;
     private final ApplicationEventPublisher eventPublisher;
 
     public ConfirmPaymentUseCase(
             StripeProperties stripeProperties,
             LeadRepository leadRepository,
             PaymentRepository paymentRepository,
+            LeadConversionService leadConversionService,
             ApplicationEventPublisher eventPublisher
     ) {
         this.stripeProperties = stripeProperties;
         this.leadRepository = leadRepository;
         this.paymentRepository = paymentRepository;
+        this.leadConversionService = leadConversionService;
         this.eventPublisher = eventPublisher;
     }
 
@@ -108,8 +112,7 @@ public class ConfirmPaymentUseCase {
         payment.setCreatedAt(OffsetDateTime.now());
         paymentRepository.save(payment);
 
-        if (!lead.isWon()) {
-            lead.markAsWon(amount);
+        if (leadConversionService.markAsWon(lead, amount)) {
             leadRepository.save(lead);
             log.info("usecase.confirmPayment.leadUpdated leadId={} status={} convertedAmount={}",
                     lead.getId(), lead.getStatus(), lead.getConvertedAmount());
