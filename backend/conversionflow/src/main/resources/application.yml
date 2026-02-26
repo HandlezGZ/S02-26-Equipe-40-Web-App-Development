@@ -53,3 +53,8 @@ google:
 
 pipedrive:
   api-token: ${PIPEDRIVE_API_TOKEN}
+
+dispatch:
+  retry:
+    max-attempts: ${DISPATCH_RETRY_MAX_ATTEMPTS:5}
+    interval-ms: ${DISPATCH_RETRY_INTERVAL_MS:60000}
