@@ -8,13 +8,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
-public class EnrichAttributionUseCase {
+public class CapturePixelEventUseCase {
 
-    private static final Logger log = LoggerFactory.getLogger(EnrichAttributionUseCase.class);
+    private static final Logger log = LoggerFactory.getLogger(CapturePixelEventUseCase.class);
 
     private final LeadRepository leadRepository;
 
-    public EnrichAttributionUseCase(LeadRepository leadRepository) {
+    public CapturePixelEventUseCase(LeadRepository leadRepository) {
         this.leadRepository = leadRepository;
     }
 
@@ -28,7 +28,7 @@ public class EnrichAttributionUseCase {
         lead.updateTracking(gclid, fbclid, fbp, fbc);
         leadRepository.save(lead);
 
-        log.info("usecase.enrichAttribution.success leadId={} externalId={} gclid={} fbclid={} fbp={} fbc={}",
+        log.info("usecase.pixelEvent.capture.success leadId={} externalId={} gclid={} fbclid={} fbp={} fbc={}",
                 lead.getId(),
                 lead.getExternalId(),
                 blankToNull(gclid) != null,
