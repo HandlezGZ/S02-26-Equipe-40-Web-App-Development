@@ -37,14 +37,16 @@ public class StripeWebhookService {
             String gclid,
             String fbclid,
             String fbp,
-            String fbc
+            String fbc,
+            String utmSource,
+            String utmCampaign
     ) throws StripeException {
         log.info("stripe.checkout.create start leadId={} plan={}", leadId, plan);
 
         Lead lead = leadRepository.findById(leadId)
                 .orElseThrow(() -> new IllegalArgumentException("Lead not found: " + leadId));
 
-        lead.updateTracking(gclid, fbclid, fbp, fbc);
+        lead.updateTracking(gclid, fbclid, fbp, fbc, utmSource, utmCampaign);
         lead.startCheckout();
         leadRepository.save(lead);
 

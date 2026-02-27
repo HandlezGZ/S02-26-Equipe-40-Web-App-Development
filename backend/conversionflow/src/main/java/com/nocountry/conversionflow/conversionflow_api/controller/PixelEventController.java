@@ -32,7 +32,9 @@ public class PixelEventController {
                 request.gclid(),
                 request.fbclid(),
                 request.fbp(),
-                request.fbc()
+                request.fbc(),
+                request.utmSource(),
+                request.utmCampaign()
         );
 
         return ResponseEntity.accepted().build();
