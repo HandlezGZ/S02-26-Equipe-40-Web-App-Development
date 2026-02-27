@@ -29,6 +29,7 @@ public class PixelEventController {
         capturePixelEventUseCase.execute(
                 request.leadId(),
                 request.externalId(),
+                request.checkoutSessionId(),
                 request.gclid(),
                 request.fbclid(),
                 request.fbp(),
