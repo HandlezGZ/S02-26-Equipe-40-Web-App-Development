@@ -19,22 +19,33 @@ public class CapturePixelEventUseCase {
     }
 
     @Transactional
-    public void execute(Long leadId, String externalId, String gclid, String fbclid, String fbp, String fbc) {
+    public void execute(
+            Long leadId,
+            String externalId,
+            String gclid,
+            String fbclid,
+            String fbp,
+            String fbc,
+            String utmSource,
+            String utmCampaign
+    ) {
         if (leadId == null && (externalId == null || externalId.isBlank())) {
             throw new IllegalArgumentException("leadId or externalId is required");
         }
 
         Lead lead = resolveLead(leadId, externalId);
-        lead.updateTracking(gclid, fbclid, fbp, fbc);
+        lead.updateTracking(gclid, fbclid, fbp, fbc, utmSource, utmCampaign);
         leadRepository.save(lead);
 
-        log.info("usecase.pixelEvent.capture.success leadId={} externalId={} gclid={} fbclid={} fbp={} fbc={}",
+        log.info("usecase.pixelEvent.capture.success leadId={} externalId={} gclid={} fbclid={} fbp={} fbc={} utmSource={} utmCampaign={}",
                 lead.getId(),
                 lead.getExternalId(),
                 blankToNull(gclid) != null,
                 blankToNull(fbclid) != null,
                 blankToNull(fbp) != null,
-                blankToNull(fbc) != null);
+                blankToNull(fbc) != null,
+                blankToNull(utmSource) != null,
+                blankToNull(utmCampaign) != null);
     }
 
     private Lead resolveLead(Long leadId, String externalId) {

@@ -17,9 +17,18 @@ public class CreateLeadUseCase {
         this.leadService = leadService;
     }
 
-    public Lead execute(String externalId, String email, String gclid, String fbclid, String fbp, String fbc) {
+    public Lead execute(
+            String externalId,
+            String email,
+            String gclid,
+            String fbclid,
+            String fbp,
+            String fbc,
+            String utmSource,
+            String utmCampaign
+    ) {
         log.info("usecase.createLead.start externalId={} email={}", externalId, email);
-        Lead lead = leadService.createLead(externalId, email, gclid, fbclid, fbp, fbc);
+        Lead lead = leadService.createLead(externalId, email, gclid, fbclid, fbp, fbc, utmSource, utmCampaign);
         log.info("usecase.createLead.success leadId={} externalId={}", lead.getId(), lead.getExternalId());
         return lead;
     }

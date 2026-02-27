@@ -17,10 +17,28 @@ public class StartCheckoutUseCase {
         this.stripeWebhookService = stripeWebhookService;
     }
 
-    public String execute(Long leadId, String plan, String gclid, String fbclid, String fbp, String fbc)
+    public String execute(
+            Long leadId,
+            String plan,
+            String gclid,
+            String fbclid,
+            String fbp,
+            String fbc,
+            String utmSource,
+            String utmCampaign
+    )
             throws StripeException {
         log.info("usecase.startCheckout.start leadId={} plan={}", leadId, plan);
-        String checkoutUrl = stripeWebhookService.createCheckoutSession(leadId, plan, gclid, fbclid, fbp, fbc);
+        String checkoutUrl = stripeWebhookService.createCheckoutSession(
+                leadId,
+                plan,
+                gclid,
+                fbclid,
+                fbp,
+                fbc,
+                utmSource,
+                utmCampaign
+        );
         log.info("usecase.startCheckout.success leadId={} plan={}", leadId, plan);
         return checkoutUrl;
     }

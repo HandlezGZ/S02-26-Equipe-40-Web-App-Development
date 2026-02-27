@@ -34,7 +34,9 @@ public class CheckoutController {
                 request.getGclid(),
                 request.getFbclid(),
                 request.getFbp(),
-                request.getFbc()
+                request.getFbc(),
+                request.getUtmSource(),
+                request.getUtmCampaign()
         );
 
         return ResponseEntity.ok(new CheckoutResponse(url));
