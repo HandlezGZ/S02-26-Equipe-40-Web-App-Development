@@ -112,13 +112,14 @@ public class ConfirmPaymentUseCase {
         payment.setCreatedAt(OffsetDateTime.now());
         paymentRepository.save(payment);
 
-        if (leadConversionService.markAsWon(lead, amount)) {
+        boolean convertedNow = leadConversionService.markAsWon(lead, amount);
+        if (convertedNow) {
             leadRepository.save(lead);
             log.info("usecase.confirmPayment.leadUpdated leadId={} status={} convertedAmount={}",
                     lead.getId(), lead.getStatus(), lead.getConvertedAmount());
+            publishLeadConvertedEvent(lead, paymentIntentId);
         }
 
-        publishLeadConvertedEvent(lead, paymentIntentId);
         log.info("usecase.confirmPayment.success leadId={} paymentIntentId={}", lead.getId(), paymentIntentId);
     }
 
