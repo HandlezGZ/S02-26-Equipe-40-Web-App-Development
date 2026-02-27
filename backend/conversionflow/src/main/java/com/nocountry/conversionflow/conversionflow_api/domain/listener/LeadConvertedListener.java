@@ -9,6 +9,8 @@ import com.nocountry.conversionflow.conversionflow_api.domain.repository.Convers
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionPhase;
 
@@ -25,6 +27,7 @@ public class LeadConvertedListener {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleLeadConverted(LeadConvertedEvent event) {
         log.info("lead.converted.event received leadId={} paymentIntentId={}",
                 event.getLeadId(), event.getPaymentIntentId());
@@ -37,10 +40,15 @@ public class LeadConvertedListener {
     }
 
     private void createDispatch(Long leadId, Provider provider, String payload) {
-        ConversionDispatch dispatch = new ConversionDispatch(leadId, provider, payload);
-        ConversionDispatch saved = repository.save(dispatch);
-        log.info("dispatch.created dispatchId={} leadId={} provider={} status={}",
-                saved.getId(), saved.getLeadId(), saved.getProvider(), saved.getStatus());
+        try {
+            ConversionDispatch dispatch = new ConversionDispatch(leadId, provider, payload);
+            ConversionDispatch saved = repository.saveAndFlush(dispatch);
+            log.info("dispatch.created dispatchId={} leadId={} provider={} status={}",
+                    saved.getId(), saved.getLeadId(), saved.getProvider(), saved.getStatus());
+        } catch (Exception e) {
+            log.error("dispatch.create.error leadId={} provider={} error={}",
+                    leadId, provider, e.getMessage(), e);
+        }
     }
 
     private String serializeEvent(LeadConvertedEvent event) {
