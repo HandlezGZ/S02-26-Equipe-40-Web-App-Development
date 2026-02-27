@@ -4,6 +4,7 @@ import com.nocountry.conversionflow.conversionflow_api.config.properties.StripeP
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.Lead;
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.Payment;
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.PaymentStatus;
+import com.nocountry.conversionflow.conversionflow_api.domain.event.LeadConvertedEvent;
 import com.nocountry.conversionflow.conversionflow_api.domain.repository.LeadRepository;
 import com.nocountry.conversionflow.conversionflow_api.domain.repository.PaymentRepository;
 import com.nocountry.conversionflow.conversionflow_api.domain.service.LeadConversionService;
@@ -12,6 +13,7 @@ import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,17 +29,20 @@ public class CapturePixelEventUseCase {
     private final PaymentRepository paymentRepository;
     private final LeadConversionService leadConversionService;
     private final StripeProperties stripeProperties;
+    private final ApplicationEventPublisher eventPublisher;
 
     public CapturePixelEventUseCase(
             LeadRepository leadRepository,
             PaymentRepository paymentRepository,
             LeadConversionService leadConversionService,
-            StripeProperties stripeProperties
+            StripeProperties stripeProperties,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.leadRepository = leadRepository;
         this.paymentRepository = paymentRepository;
         this.leadConversionService = leadConversionService;
         this.stripeProperties = stripeProperties;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -123,6 +128,7 @@ public class CapturePixelEventUseCase {
 
             if (leadConversionService.markAsWon(lead, amount)) {
                 leadRepository.save(lead);
+                publishLeadConvertedEvent(lead, paymentIntentId);
                 log.info("usecase.pixelEvent.capture.markedWon leadId={} checkoutSessionId={} paymentIntentId={}",
                         lead.getId(), normalizedSessionId, paymentIntentId);
             }
@@ -147,5 +153,21 @@ public class CapturePixelEventUseCase {
             return null;
         }
         return value;
+    }
+
+    private void publishLeadConvertedEvent(Lead lead, String paymentIntentId) {
+        LeadConvertedEvent event = new LeadConvertedEvent(
+                lead.getId(),
+                lead.getExternalId(),
+                lead.getEmail(),
+                lead.getGclid(),
+                lead.getFbclid(),
+                lead.getFbp(),
+                lead.getFbc(),
+                paymentIntentId,
+                lead.getConvertedAmount(),
+                lead.getConvertedAt()
+        );
+        eventPublisher.publishEvent(event);
     }
 }
