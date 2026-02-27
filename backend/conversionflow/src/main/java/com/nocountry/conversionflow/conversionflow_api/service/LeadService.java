@@ -16,7 +16,16 @@ public class LeadService {
         this.leadRepository = leadRepository;
     }
 
-    public Lead createLead(String externalId, String email, String gclid, String fbclid, String fbp, String fbc) {
+    public Lead createLead(
+            String externalId,
+            String email,
+            String gclid,
+            String fbclid,
+            String fbp,
+            String fbc,
+            String utmSource,
+            String utmCampaign
+    ) {
         log.info("lead.service.create start externalId={} email={}", externalId, email);
 
         if (leadRepository.existsByExternalId(externalId)) {
@@ -25,7 +34,7 @@ public class LeadService {
         }
 
         Lead lead = new Lead(externalId, email);
-        lead.updateTracking(gclid, fbclid, fbp, fbc);
+        lead.updateTracking(gclid, fbclid, fbp, fbc, utmSource, utmCampaign);
 
         Lead savedLead = leadRepository.save(lead);
         log.info("lead.service.create saved leadId={} externalId={} status={}",

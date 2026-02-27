@@ -37,14 +37,16 @@ public class StripeWebhookService {
             String gclid,
             String fbclid,
             String fbp,
-            String fbc
+            String fbc,
+            String utmSource,
+            String utmCampaign
     ) throws StripeException {
         log.info("stripe.checkout.create start leadId={} plan={}", leadId, plan);
 
         Lead lead = leadRepository.findById(leadId)
                 .orElseThrow(() -> new IllegalArgumentException("Lead not found: " + leadId));
 
-        lead.updateTracking(gclid, fbclid, fbp, fbc);
+        lead.updateTracking(gclid, fbclid, fbp, fbc, utmSource, utmCampaign);
         lead.startCheckout();
         leadRepository.save(lead);
 
@@ -53,7 +55,7 @@ public class StripeWebhookService {
 
         SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl(stripeProperties.getSuccessUrl())
+                .setSuccessUrl(ensureSessionIdPlaceholder(stripeProperties.getSuccessUrl()))
                 .setCancelUrl(stripeProperties.getCancelUrl())
                 .putMetadata("leadId", String.valueOf(lead.getId()))
                 .putMetadata("plan", normalizedPlan)
@@ -74,6 +76,18 @@ public class StripeWebhookService {
         log.info("stripe.checkout.create success leadId={} plan={} sessionId={}",
                 leadId, normalizedPlan, session.getId());
         return session.getUrl();
+    }
+
+    private String ensureSessionIdPlaceholder(String successUrl) {
+        String placeholder = "{CHECKOUT_SESSION_ID}";
+        String param = "session_id=" + placeholder;
+        if (successUrl == null || successUrl.isBlank()) {
+            throw new IllegalStateException("stripe.success-url is not configured");
+        }
+        if (successUrl.contains(param)) {
+            return successUrl;
+        }
+        return successUrl + (successUrl.contains("?") ? "&" : "?") + param;
     }
 
     private String resolvePriceId(String normalizedPlan) {

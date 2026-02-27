@@ -20,6 +20,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/leads/**",
                                 "/checkout/**",        // ✅ libera tudo em /checkout/*
+                                "/pixel-events/**",
                                 "/webhooks/stripe",     // webhook exato
                                 "/health",
                                 "/error"

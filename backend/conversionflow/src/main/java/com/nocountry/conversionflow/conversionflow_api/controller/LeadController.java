@@ -30,7 +30,9 @@ public class LeadController {
                 request.gclid(),
                 request.fbclid(),
                 request.fbp(),
-                request.fbc()
+                request.fbc(),
+                request.utmSource(),
+                request.utmCampaign()
         );
 
         log.info("lead.create.success leadId={} externalId={} status={}", lead.getId(), lead.getExternalId(), lead.getStatus());
