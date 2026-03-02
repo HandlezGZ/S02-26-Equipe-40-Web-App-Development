@@ -39,8 +39,32 @@ public class AuthService {
     public AuthTokenResponse register(RegisterRequest request) {
         String normalizedEmail = request.email().trim().toLowerCase();
 
-        if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
-            throw new IllegalArgumentException("email_already_registered");
+        Optional<User> existing = userRepository.findByEmailIgnoreCase(normalizedEmail);
+        if (existing.isPresent()) {
+            User existingUser = existing.get();
+            if (existingUser.getPasswordHash() == null || !passwordEncoder.matches(request.password(), existingUser.getPasswordHash())) {
+                throw new IllegalArgumentException("email_already_registered");
+            }
+
+            conversionFlowLeadClient.createLead(new CreateLeadRequest(
+                    existingUser.getId().toString(),
+                    existingUser.getEmail(),
+                    request.gclid(),
+                    request.fbclid(),
+                    request.fbp(),
+                    request.fbc(),
+                    request.utmSource(),
+                    request.utmCampaign()
+            ));
+
+            String replayToken = jwtService.generateAccessToken(existingUser);
+            return new AuthTokenResponse(
+                    replayToken,
+                    "Bearer",
+                    jwtService.getExpirationSeconds(),
+                    existingUser.getId().toString(),
+                    existingUser.getEmail()
+            );
         }
 
         User user = new User();

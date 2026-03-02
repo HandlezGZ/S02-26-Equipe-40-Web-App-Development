@@ -6,6 +6,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 @Component
 public class ConversionFlowLeadClient {
@@ -35,6 +36,11 @@ public class ConversionFlowLeadClient {
             post.body(request)
                     .retrieve()
                     .toBodilessEntity();
+        } catch (RestClientResponseException exception) {
+            if (exception.getStatusCode().value() == 409) {
+                return;
+            }
+            throw new ConversionFlowIntegrationException("conversionflow_lead_sync_failed", exception);
         } catch (RestClientException exception) {
             throw new ConversionFlowIntegrationException("conversionflow_lead_sync_failed", exception);
         }
