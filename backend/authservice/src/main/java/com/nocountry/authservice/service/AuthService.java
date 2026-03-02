@@ -5,6 +5,8 @@ import com.nocountry.authservice.domain.User;
 import com.nocountry.authservice.dto.AuthTokenResponse;
 import com.nocountry.authservice.dto.LoginRequest;
 import com.nocountry.authservice.dto.RegisterRequest;
+import com.nocountry.authservice.integration.conversionflow.ConversionFlowLeadClient;
+import com.nocountry.authservice.integration.conversionflow.CreateLeadRequest;
 import com.nocountry.authservice.repository.UserRepository;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,11 +21,18 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final ConversionFlowLeadClient conversionFlowLeadClient;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            ConversionFlowLeadClient conversionFlowLeadClient
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.conversionFlowLeadClient = conversionFlowLeadClient;
     }
 
     @Transactional
@@ -40,6 +49,16 @@ public class AuthService {
         user.setProvider(AuthProvider.LOCAL);
 
         User savedUser = userRepository.save(user);
+        conversionFlowLeadClient.createLead(new CreateLeadRequest(
+                savedUser.getId().toString(),
+                savedUser.getEmail(),
+                request.gclid(),
+                request.fbclid(),
+                request.fbp(),
+                request.fbc(),
+                request.utmSource(),
+                request.utmCampaign()
+        ));
         String token = jwtService.generateAccessToken(savedUser);
 
         return new AuthTokenResponse(
@@ -82,24 +101,35 @@ public class AuthService {
         String normalizedEmail = email.trim().toLowerCase();
 
         Optional<User> byGoogleSubject = userRepository.findByGoogleSubject(googleSubject);
-        User user;
+        User user = byGoogleSubject.orElse(null);
+        boolean createdNewUser = false;
 
-        if (byGoogleSubject.isPresent()) {
-            user = byGoogleSubject.get();
-        } else {
-            user = userRepository.findByEmailIgnoreCase(normalizedEmail)
-                    .map(existing -> {
-                        existing.setGoogleSubject(googleSubject);
-                        return existing;
-                    })
-                    .orElseGet(() -> {
-                        User createdUser = new User();
-                        createdUser.setEmail(normalizedEmail);
-                        createdUser.setProvider(AuthProvider.GOOGLE);
-                        createdUser.setGoogleSubject(googleSubject);
-                        return createdUser;
-                    });
+        if (user == null) {
+            Optional<User> byEmail = userRepository.findByEmailIgnoreCase(normalizedEmail);
+            if (byEmail.isPresent()) {
+                user = byEmail.get();
+                user.setGoogleSubject(googleSubject);
+            } else {
+                user = new User();
+                user.setEmail(normalizedEmail);
+                user.setProvider(AuthProvider.GOOGLE);
+                user.setGoogleSubject(googleSubject);
+                createdNewUser = true;
+            }
             user = userRepository.save(user);
+        }
+
+        if (createdNewUser) {
+            conversionFlowLeadClient.createLead(new CreateLeadRequest(
+                    user.getId().toString(),
+                    user.getEmail(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    "google",
+                    null
+            ));
         }
 
         String token = jwtService.generateAccessToken(user);

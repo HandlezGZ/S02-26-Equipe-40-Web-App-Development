@@ -45,3 +45,6 @@ app:
   oauth2:
     success-redirect-uri: ${OAUTH2_SUCCESS_REDIRECT_URI:http://localhost:5173/auth/callback}
     failure-redirect-uri: ${OAUTH2_FAILURE_REDIRECT_URI:http://localhost:5173/login}
+  conversionflow:
+    base-url: ${CONVERSIONFLOW_BASE_URL:http://localhost:8080}
+    api-key: ${CONVERSIONFLOW_API_KEY:}
