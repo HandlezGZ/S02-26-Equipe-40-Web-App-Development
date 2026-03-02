@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,6 +37,11 @@ public class AuthController {
     public ResponseEntity<AuthTokenResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthTokenResponse response = authService.login(request);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/google/url")
+    public ResponseEntity<Map<String, String>> googleAuthorizationUrl() {
+        return ResponseEntity.ok(Map.of("url", "/oauth2/authorization/google"));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

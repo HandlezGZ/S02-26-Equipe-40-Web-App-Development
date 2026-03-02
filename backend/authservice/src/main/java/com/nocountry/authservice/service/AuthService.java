@@ -11,6 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 public class AuthService {
 
@@ -56,8 +58,48 @@ public class AuthService {
         User user = userRepository.findByEmailIgnoreCase(normalizedEmail)
                 .orElseThrow(() -> new BadCredentialsException("invalid_credentials"));
 
+        if (user.getPasswordHash() == null || user.getProvider() == AuthProvider.GOOGLE) {
+            throw new BadCredentialsException("password_login_not_available");
+        }
+
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new BadCredentialsException("invalid_credentials");
+        }
+
+        String token = jwtService.generateAccessToken(user);
+
+        return new AuthTokenResponse(
+                token,
+                "Bearer",
+                jwtService.getExpirationSeconds(),
+                user.getId().toString(),
+                user.getEmail()
+        );
+    }
+
+    @Transactional
+    public AuthTokenResponse loginWithGoogle(String email, String googleSubject) {
+        String normalizedEmail = email.trim().toLowerCase();
+
+        Optional<User> byGoogleSubject = userRepository.findByGoogleSubject(googleSubject);
+        User user;
+
+        if (byGoogleSubject.isPresent()) {
+            user = byGoogleSubject.get();
+        } else {
+            user = userRepository.findByEmailIgnoreCase(normalizedEmail)
+                    .map(existing -> {
+                        existing.setGoogleSubject(googleSubject);
+                        return existing;
+                    })
+                    .orElseGet(() -> {
+                        User createdUser = new User();
+                        createdUser.setEmail(normalizedEmail);
+                        createdUser.setProvider(AuthProvider.GOOGLE);
+                        createdUser.setGoogleSubject(googleSubject);
+                        return createdUser;
+                    });
+            user = userRepository.save(user);
         }
 
         String token = jwtService.generateAccessToken(user);
