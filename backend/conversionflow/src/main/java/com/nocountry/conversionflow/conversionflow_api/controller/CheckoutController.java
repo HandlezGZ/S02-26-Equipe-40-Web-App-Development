@@ -3,7 +3,6 @@ package com.nocountry.conversionflow.conversionflow_api.controller;
 import com.nocountry.conversionflow.conversionflow_api.application.usecase.StartCheckoutUseCase;
 import com.nocountry.conversionflow.conversionflow_api.controller.dto.CheckoutRequest;
 import com.nocountry.conversionflow.conversionflow_api.controller.dto.CheckoutResponse;
-import com.stripe.exception.StripeException;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,8 +22,7 @@ public class CheckoutController {
     }
 
     @PostMapping
-    public ResponseEntity<CheckoutResponse> createCheckout(@Valid @RequestBody CheckoutRequest request)
-            throws StripeException {
+    public ResponseEntity<CheckoutResponse> createCheckout(@Valid @RequestBody CheckoutRequest request) {
 
         log.info("Creating checkout. leadId={}, plan={}", request.getLeadId(), request.getPlan());
 

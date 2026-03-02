@@ -1,22 +1,38 @@
 package com.nocountry.conversionflow.conversionflow_api.application.usecase;
 
-import com.nocountry.conversionflow.conversionflow_api.service.stripe.StripeWebhookService;
-import com.stripe.exception.StripeException;
+import com.nocountry.conversionflow.conversionflow_api.config.properties.StripeProperties;
+import com.nocountry.conversionflow.conversionflow_api.domain.entity.Lead;
+import com.nocountry.conversionflow.conversionflow_api.domain.repository.LeadRepository;
+import com.nocountry.conversionflow.conversionflow_api.infrastructure.stripe.StripeCheckoutSession;
+import com.nocountry.conversionflow.conversionflow_api.infrastructure.stripe.StripeClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Locale;
+import java.util.Map;
 
 @Component
 public class StartCheckoutUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(StartCheckoutUseCase.class);
 
-    private final StripeWebhookService stripeWebhookService;
+    private final StripeProperties stripeProperties;
+    private final LeadRepository leadRepository;
+    private final StripeClient stripeClient;
 
-    public StartCheckoutUseCase(StripeWebhookService stripeWebhookService) {
-        this.stripeWebhookService = stripeWebhookService;
+    public StartCheckoutUseCase(
+            StripeProperties stripeProperties,
+            LeadRepository leadRepository,
+            StripeClient stripeClient
+    ) {
+        this.stripeProperties = stripeProperties;
+        this.leadRepository = leadRepository;
+        this.stripeClient = stripeClient;
     }
 
+    @Transactional
     public String execute(
             Long leadId,
             String plan,
@@ -26,20 +42,60 @@ public class StartCheckoutUseCase {
             String fbc,
             String utmSource,
             String utmCampaign
-    )
-            throws StripeException {
+    ) {
         log.info("usecase.startCheckout.start leadId={} plan={}", leadId, plan);
-        String checkoutUrl = stripeWebhookService.createCheckoutSession(
-                leadId,
-                plan,
-                gclid,
-                fbclid,
-                fbp,
-                fbc,
-                utmSource,
-                utmCampaign
+
+        Lead lead = leadRepository.findById(leadId)
+                .orElseThrow(() -> new IllegalArgumentException("Lead not found: " + leadId));
+
+        lead.updateTracking(gclid, fbclid, fbp, fbc, utmSource, utmCampaign);
+        lead.startCheckout();
+        leadRepository.save(lead);
+
+        String normalizedPlan = plan.trim().toLowerCase(Locale.ROOT);
+        String priceId = resolvePriceId(normalizedPlan);
+
+        StripeCheckoutSession checkoutSession = stripeClient.createCheckoutSession(
+                ensureSessionIdPlaceholder(stripeProperties.getSuccessUrl()),
+                stripeProperties.getCancelUrl(),
+                priceId,
+                Map.of(
+                        "leadId", String.valueOf(lead.getId()),
+                        "plan", normalizedPlan
+                )
         );
-        log.info("usecase.startCheckout.success leadId={} plan={}", leadId, plan);
-        return checkoutUrl;
+        if (checkoutSession.url() == null || checkoutSession.url().isBlank()) {
+            throw new IllegalStateException("Stripe did not return checkout URL");
+        }
+
+        log.info("usecase.startCheckout.success leadId={} plan={} sessionId={}",
+                leadId, normalizedPlan, checkoutSession.sessionId());
+        return checkoutSession.url();
+    }
+
+    private String ensureSessionIdPlaceholder(String successUrl) {
+        String placeholder = "{CHECKOUT_SESSION_ID}";
+        String param = "session_id=" + placeholder;
+        if (successUrl == null || successUrl.isBlank()) {
+            throw new IllegalStateException("stripe.success-url is not configured");
+        }
+        if (successUrl.contains(param)) {
+            return successUrl;
+        }
+        return successUrl + (successUrl.contains("?") ? "&" : "?") + param;
+    }
+
+    private String resolvePriceId(String normalizedPlan) {
+        Map<String, String> prices = stripeProperties.getPrices();
+        if (prices == null || prices.isEmpty()) {
+            throw new IllegalStateException("stripe.prices is not configured");
+        }
+
+        String priceId = prices.get(normalizedPlan);
+        if (priceId == null || priceId.isBlank()) {
+            throw new IllegalArgumentException("No Stripe priceId configured for plan: " + normalizedPlan);
+        }
+
+        return priceId;
     }
 }
