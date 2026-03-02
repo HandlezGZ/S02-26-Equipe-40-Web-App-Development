@@ -8,9 +8,9 @@ import com.nocountry.conversionflow.conversionflow_api.domain.event.LeadConverte
 import com.nocountry.conversionflow.conversionflow_api.domain.repository.LeadRepository;
 import com.nocountry.conversionflow.conversionflow_api.domain.repository.PaymentRepository;
 import com.nocountry.conversionflow.conversionflow_api.domain.service.LeadConversionService;
-import com.stripe.exception.StripeException;
-import com.stripe.model.PaymentIntent;
-import com.stripe.model.checkout.Session;
+import com.nocountry.conversionflow.conversionflow_api.infrastructure.stripe.StripeClient;
+import com.nocountry.conversionflow.conversionflow_api.infrastructure.stripe.StripePaymentIntentSnapshot;
+import com.nocountry.conversionflow.conversionflow_api.infrastructure.stripe.StripeSessionSnapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -29,6 +29,7 @@ public class CapturePixelEventUseCase {
     private final PaymentRepository paymentRepository;
     private final LeadConversionService leadConversionService;
     private final StripeProperties stripeProperties;
+    private final StripeClient stripeClient;
     private final ApplicationEventPublisher eventPublisher;
 
     public CapturePixelEventUseCase(
@@ -36,12 +37,14 @@ public class CapturePixelEventUseCase {
             PaymentRepository paymentRepository,
             LeadConversionService leadConversionService,
             StripeProperties stripeProperties,
+            StripeClient stripeClient,
             ApplicationEventPublisher eventPublisher
     ) {
         this.leadRepository = leadRepository;
         this.paymentRepository = paymentRepository;
         this.leadConversionService = leadConversionService;
         this.stripeProperties = stripeProperties;
+        this.stripeClient = stripeClient;
         this.eventPublisher = eventPublisher;
     }
 
@@ -85,32 +88,32 @@ public class CapturePixelEventUseCase {
         }
 
         try {
-            Session session = Session.retrieve(normalizedSessionId);
-            if (!"paid".equalsIgnoreCase(session.getPaymentStatus())) {
+            StripeSessionSnapshot session = stripeClient.retrieveSession(normalizedSessionId);
+            if (!"paid".equalsIgnoreCase(session.paymentStatus())) {
                 log.info("usecase.pixelEvent.capture.notPaidYet leadId={} checkoutSessionId={} paymentStatus={}",
-                        lead.getId(), normalizedSessionId, session.getPaymentStatus());
+                        lead.getId(), normalizedSessionId, session.paymentStatus());
                 return;
             }
 
-            String metadataLeadId = session.getMetadata() == null ? null : session.getMetadata().get("leadId");
+            String metadataLeadId = blankToNull(session.leadIdMetadata());
             if (metadataLeadId != null && !metadataLeadId.isBlank() && !String.valueOf(lead.getId()).equals(metadataLeadId)) {
                 log.warn("usecase.pixelEvent.capture.metadataLeadMismatch leadId={} metadataLeadId={} checkoutSessionId={}",
                         lead.getId(), metadataLeadId, normalizedSessionId);
                 return;
             }
 
-            String paymentIntentId = blankToNull(session.getPaymentIntent());
+            String paymentIntentId = blankToNull(session.paymentIntentId());
             if (paymentIntentId == null) {
                 log.warn("usecase.pixelEvent.capture.missingPaymentIntent leadId={} checkoutSessionId={}",
                         lead.getId(), normalizedSessionId);
                 return;
             }
 
-            PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
-            long amountCents = paymentIntent.getAmount() == null ? 0L : paymentIntent.getAmount();
-            String currency = blankToNull(paymentIntent.getCurrency()) == null
+            StripePaymentIntentSnapshot paymentIntent = stripeClient.retrievePaymentIntent(paymentIntentId);
+            long amountCents = paymentIntent.amountCents() == null ? 0L : paymentIntent.amountCents();
+            String currency = blankToNull(paymentIntent.currency()) == null
                     ? stripeProperties.getCurrency()
-                    : paymentIntent.getCurrency();
+                    : paymentIntent.currency();
             BigDecimal amount = BigDecimal.valueOf(amountCents).divide(BigDecimal.valueOf(100));
 
             if (!paymentRepository.existsByTransactionId(paymentIntentId)) {
@@ -132,7 +135,7 @@ public class CapturePixelEventUseCase {
                 log.info("usecase.pixelEvent.capture.markedWon leadId={} checkoutSessionId={} paymentIntentId={}",
                         lead.getId(), normalizedSessionId, paymentIntentId);
             }
-        } catch (StripeException e) {
+        } catch (RuntimeException e) {
             log.error("usecase.pixelEvent.capture.sessionConfirmError leadId={} checkoutSessionId={}",
                     lead.getId(), normalizedSessionId, e);
         }
