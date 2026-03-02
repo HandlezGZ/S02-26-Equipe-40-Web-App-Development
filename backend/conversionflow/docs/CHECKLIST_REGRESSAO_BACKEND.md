@@ -32,8 +32,9 @@ Este checklist deve ser usado antes de considerar uma entrega do backend pronta 
 2. Chamar `POST /pixel-events/purchase` com `checkoutSessionId` valido de sessao paga.
 3. Verificar:
    - atribuicao atualizada de forma nao destrutiva;
-   - fallback so marca `WON` apos verificacao server-side no Stripe;
-   - sem dupla promocao de conversao para o mesmo lead.
+   - fallback pode marcar `WON` mesmo sem webhook;
+   - endpoint de pixel nao cria registro de pagamento (`Payment`);
+   - quando webhook chegar depois, pagamento e registrado sem dupla promocao para `WON`.
 
 ## Dispatch e scheduler
 
@@ -71,4 +72,5 @@ Este checklist deve ser usado antes de considerar uma entrega do backend pronta 
 
 - Todos os itens acima verificados.
 - Nao ha regressao funcional no fluxo lead -> checkout -> webhook -> dispatch.
+- Pixel fallback e webhook nao geram dupla conversao/dispatch para o mesmo lead.
 - Evidencias de teste registradas (comandos executados + resultado).

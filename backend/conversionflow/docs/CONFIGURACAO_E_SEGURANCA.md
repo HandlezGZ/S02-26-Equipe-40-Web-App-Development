@@ -68,10 +68,23 @@ Todos os demais endpoints exigem autenticacao (`HTTP Basic`), incluindo:
 - Endpoint: `POST /webhooks/stripe`
 - O payload deve conter a assinatura valida no header `Stripe-Signature`.
 - A assinatura e validada com `STRIPE_WEBHOOK_SECRET`.
-- O webhook e a fonte primaria de confirmacao de pagamento.
+- O webhook e a autoridade principal de confirmacao de pagamento.
 
-## Pixel event (fallback controlado)
+## Pixel event (fallback controlado de conversao)
 
 - Endpoint: `POST /pixel-events/purchase`
-- Serve para enriquecer atribuicao e, quando `checkoutSessionId` estiver presente, permite validacao server-side com Stripe.
-- Mesmo com fallback, o sistema evita promover evento de conversao sem transicao real para `WON`.
+- Sempre atualiza atribuicao (`gclid`, `fbclid`, `fbp`, `fbc`, `utm*`) de forma nao destrutiva.
+- Pode promover lead para `WON` como fallback quando webhook estiver atrasado/indisponivel.
+- Nao cria registro de pagamento (`Payment`) e nao confirma pagamento no Stripe.
+
+## Regras finais de trigger e merge de conversao
+
+- Fonte de verdade de pagamento: webhook Stripe.
+- Trigger de conversao (`LeadConvertedEvent`): webhook Stripe (principal) e pixel purchase (fallback controlado).
+- Dedupe no webhook:
+  - por `stripeEventId` (reprocessamento do mesmo evento Stripe);
+  - por `paymentIntentId` (evita dupla gravacao do mesmo pagamento).
+- Dedupe entre webhook e pixel:
+  - lead ja `WON` nao e promovido novamente;
+  - webhook posterior registra pagamento, mas nao dispara nova conversao para o mesmo lead.
+- Fan-out de dispatch (`GOOGLE`, `META`, `PIPEDRIVE`) ocorre somente apos `LeadConvertedEvent`.
