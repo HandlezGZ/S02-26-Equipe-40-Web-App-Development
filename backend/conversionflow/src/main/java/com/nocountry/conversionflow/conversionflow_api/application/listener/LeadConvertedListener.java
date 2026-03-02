@@ -1,4 +1,4 @@
-package com.nocountry.conversionflow.conversionflow_api.domain.listener;
+package com.nocountry.conversionflow.conversionflow_api.application.listener;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
