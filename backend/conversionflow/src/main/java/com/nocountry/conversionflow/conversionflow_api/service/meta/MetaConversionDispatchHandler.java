@@ -4,20 +4,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.Provider;
 import com.nocountry.conversionflow.conversionflow_api.domain.event.LeadConvertedEvent;
 import com.nocountry.conversionflow.conversionflow_api.infrastructure.meta.MetaApiClient;
-import com.nocountry.conversionflow.conversionflow_api.service.dispatch.DispatchProviderHandler;
+import com.nocountry.conversionflow.conversionflow_api.service.dispatch.ConversionDispatchHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
-public class MetaConversionsService implements DispatchProviderHandler {
+public class MetaConversionDispatchHandler implements ConversionDispatchHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(MetaConversionsService.class);
+    private static final Logger log = LoggerFactory.getLogger(MetaConversionDispatchHandler.class);
 
     private final MetaApiClient metaApiClient;
     private final ObjectMapper objectMapper;
 
-    public MetaConversionsService(MetaApiClient metaApiClient, ObjectMapper objectMapper) {
+    public MetaConversionDispatchHandler(MetaApiClient metaApiClient, ObjectMapper objectMapper) {
         this.metaApiClient = metaApiClient;
         this.objectMapper = objectMapper;
     }
@@ -43,8 +43,6 @@ public class MetaConversionsService implements DispatchProviderHandler {
     }
 
     public void sendConversion(LeadConvertedEvent event) {
-
-        // MVP: pelo menos um identificador Meta (fbclid/fbp/fbc)
         boolean hasMetaId =
                 (event.getFbclid() != null && !event.getFbclid().isBlank()) ||
                         (event.getFbp() != null && !event.getFbp().isBlank()) ||

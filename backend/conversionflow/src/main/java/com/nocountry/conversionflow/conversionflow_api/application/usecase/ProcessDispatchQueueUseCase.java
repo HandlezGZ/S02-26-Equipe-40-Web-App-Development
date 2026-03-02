@@ -5,7 +5,7 @@ import com.nocountry.conversionflow.conversionflow_api.domain.entity.ConversionD
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.DispatchStatus;
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.Provider;
 import com.nocountry.conversionflow.conversionflow_api.domain.repository.ConversionDispatchRepository;
-import com.nocountry.conversionflow.conversionflow_api.service.dispatch.DispatchProviderHandler;
+import com.nocountry.conversionflow.conversionflow_api.service.dispatch.ConversionDispatchHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -23,17 +23,17 @@ public class ProcessDispatchQueueUseCase {
 
     private final ConversionDispatchRepository repository;
     private final DispatchRetryProperties dispatchRetryProperties;
-    private final Map<Provider, DispatchProviderHandler> providerHandlers;
+    private final Map<Provider, ConversionDispatchHandler> providerHandlers;
 
     public ProcessDispatchQueueUseCase(
             ConversionDispatchRepository repository,
             DispatchRetryProperties dispatchRetryProperties,
-            List<DispatchProviderHandler> providerHandlers
+            List<ConversionDispatchHandler> providerHandlers
     ) {
         this.repository = repository;
         this.dispatchRetryProperties = dispatchRetryProperties;
         this.providerHandlers = new EnumMap<>(Provider.class);
-        for (DispatchProviderHandler providerHandler : providerHandlers) {
+        for (ConversionDispatchHandler providerHandler : providerHandlers) {
             this.providerHandlers.put(providerHandler.provider(), providerHandler);
         }
     }
@@ -74,7 +74,7 @@ public class ProcessDispatchQueueUseCase {
                         dispatch.getStatus(),
                         dispatch.getAttemptCount());
 
-                DispatchProviderHandler providerHandler = providerHandlers.get(dispatch.getProvider());
+                ConversionDispatchHandler providerHandler = providerHandlers.get(dispatch.getProvider());
                 if (providerHandler == null) {
                     throw new IllegalStateException("No handler configured for provider " + dispatch.getProvider());
                 }

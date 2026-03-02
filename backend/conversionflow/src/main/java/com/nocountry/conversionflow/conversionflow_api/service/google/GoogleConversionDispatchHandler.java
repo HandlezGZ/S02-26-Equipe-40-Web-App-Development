@@ -3,19 +3,19 @@ package com.nocountry.conversionflow.conversionflow_api.service.google;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.Provider;
 import com.nocountry.conversionflow.conversionflow_api.domain.event.LeadConvertedEvent;
-import com.nocountry.conversionflow.conversionflow_api.service.dispatch.DispatchProviderHandler;
+import com.nocountry.conversionflow.conversionflow_api.service.dispatch.ConversionDispatchHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
-public class GoogleConversionsService implements DispatchProviderHandler {
+public class GoogleConversionDispatchHandler implements ConversionDispatchHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(GoogleConversionsService.class);
+    private static final Logger log = LoggerFactory.getLogger(GoogleConversionDispatchHandler.class);
 
     private final ObjectMapper objectMapper;
 
-    public GoogleConversionsService(ObjectMapper objectMapper) {
+    public GoogleConversionDispatchHandler(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
@@ -39,12 +39,7 @@ public class GoogleConversionsService implements DispatchProviderHandler {
         }
     }
 
-    /**
-     * MVP: stub com log.
-     * Aqui você conecta o client real do Google Ads (quando for fechar Sprint 6).
-     */
     public void sendConversion(LeadConvertedEvent event) {
-
         if (event.getGclid() == null || event.getGclid().isBlank()) {
             log.info("Google conversion skipped. No gclid. leadId={}", event.getLeadId());
             return;

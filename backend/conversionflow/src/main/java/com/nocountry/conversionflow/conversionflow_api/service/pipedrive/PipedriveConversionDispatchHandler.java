@@ -4,19 +4,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.Provider;
 import com.nocountry.conversionflow.conversionflow_api.domain.event.LeadConvertedEvent;
 import com.nocountry.conversionflow.conversionflow_api.infrastructure.pipedrive.PipedriveClient;
-import com.nocountry.conversionflow.conversionflow_api.service.dispatch.DispatchProviderHandler;
+import com.nocountry.conversionflow.conversionflow_api.service.dispatch.ConversionDispatchHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
-public class PipedriveService implements DispatchProviderHandler {
+public class PipedriveConversionDispatchHandler implements ConversionDispatchHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(PipedriveService.class);
+    private static final Logger log = LoggerFactory.getLogger(PipedriveConversionDispatchHandler.class);
     private final PipedriveClient pipedriveClient;
     private final ObjectMapper objectMapper;
 
-    public PipedriveService(PipedriveClient pipedriveClient, ObjectMapper objectMapper) {
+    public PipedriveConversionDispatchHandler(PipedriveClient pipedriveClient, ObjectMapper objectMapper) {
         this.pipedriveClient = pipedriveClient;
         this.objectMapper = objectMapper;
     }
