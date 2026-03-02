@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: authservice-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/authservice}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:admin}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+server:
+  port: ${SERVER_PORT:8090}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:secret-key-change-me}
+    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+    issuer: ${JWT_ISSUER:authservice-api}
