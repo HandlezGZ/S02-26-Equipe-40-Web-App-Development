@@ -1,11 +1,11 @@
 package com.nocountry.conversionflow.conversionflow_api.application.usecase;
 
 import com.nocountry.conversionflow.conversionflow_api.config.properties.DispatchRetryProperties;
+import com.nocountry.conversionflow.conversionflow_api.application.port.ConversionDispatchHandler;
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.ConversionDispatch;
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.DispatchStatus;
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.Provider;
 import com.nocountry.conversionflow.conversionflow_api.domain.repository.ConversionDispatchRepository;
-import com.nocountry.conversionflow.conversionflow_api.service.dispatch.ConversionDispatchHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

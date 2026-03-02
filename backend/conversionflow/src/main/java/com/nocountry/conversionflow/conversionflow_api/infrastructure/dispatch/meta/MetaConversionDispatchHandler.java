@@ -1,10 +1,10 @@
-package com.nocountry.conversionflow.conversionflow_api.service.meta;
+package com.nocountry.conversionflow.conversionflow_api.infrastructure.dispatch.meta;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nocountry.conversionflow.conversionflow_api.application.port.ConversionDispatchHandler;
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.Provider;
 import com.nocountry.conversionflow.conversionflow_api.domain.event.LeadConvertedEvent;
 import com.nocountry.conversionflow.conversionflow_api.infrastructure.meta.MetaApiClient;
-import com.nocountry.conversionflow.conversionflow_api.service.dispatch.ConversionDispatchHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
