@@ -1,5 +1,8 @@
 package com.nocountry.conversionflow.conversionflow_api.application.usecase;
 
+import com.nocountry.conversionflow.conversionflow_api.application.exception.AppConfigurationException;
+import com.nocountry.conversionflow.conversionflow_api.application.exception.InvalidInputException;
+import com.nocountry.conversionflow.conversionflow_api.application.exception.LeadNotFoundException;
 import com.nocountry.conversionflow.conversionflow_api.config.properties.StripeProperties;
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.Lead;
 import com.nocountry.conversionflow.conversionflow_api.domain.repository.LeadRepository;
@@ -46,7 +49,7 @@ public class StartCheckoutUseCase {
         log.info("usecase.startCheckout.start leadId={} plan={}", leadId, plan);
 
         Lead lead = leadRepository.findById(leadId)
-                .orElseThrow(() -> new IllegalArgumentException("Lead not found: " + leadId));
+                .orElseThrow(() -> new LeadNotFoundException("Lead not found: " + leadId));
 
         lead.updateTracking(gclid, fbclid, fbp, fbc, utmSource, utmCampaign);
         lead.startCheckout();
@@ -65,7 +68,7 @@ public class StartCheckoutUseCase {
                 )
         );
         if (checkoutSession.url() == null || checkoutSession.url().isBlank()) {
-            throw new IllegalStateException("Stripe did not return checkout URL");
+            throw new AppConfigurationException("Stripe did not return checkout URL");
         }
 
         log.info("usecase.startCheckout.success leadId={} plan={} sessionId={}",
@@ -77,7 +80,7 @@ public class StartCheckoutUseCase {
         String placeholder = "{CHECKOUT_SESSION_ID}";
         String param = "session_id=" + placeholder;
         if (successUrl == null || successUrl.isBlank()) {
-            throw new IllegalStateException("stripe.success-url is not configured");
+            throw new AppConfigurationException("stripe.success-url is not configured");
         }
         if (successUrl.contains(param)) {
             return successUrl;
@@ -88,12 +91,12 @@ public class StartCheckoutUseCase {
     private String resolvePriceId(String normalizedPlan) {
         Map<String, String> prices = stripeProperties.getPrices();
         if (prices == null || prices.isEmpty()) {
-            throw new IllegalStateException("stripe.prices is not configured");
+            throw new AppConfigurationException("stripe.prices is not configured");
         }
 
         String priceId = prices.get(normalizedPlan);
         if (priceId == null || priceId.isBlank()) {
-            throw new IllegalArgumentException("No Stripe priceId configured for plan: " + normalizedPlan);
+            throw new InvalidInputException("No Stripe priceId configured for plan: " + normalizedPlan);
         }
 
         return priceId;

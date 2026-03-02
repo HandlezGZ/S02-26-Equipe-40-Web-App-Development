@@ -1,5 +1,7 @@
 package com.nocountry.conversionflow.conversionflow_api.infrastructure.stripe;
 
+import com.nocountry.conversionflow.conversionflow_api.application.exception.StripeIntegrationException;
+import com.nocountry.conversionflow.conversionflow_api.application.exception.StripeWebhookException;
 import com.nocountry.conversionflow.conversionflow_api.config.properties.StripeProperties;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -50,7 +52,7 @@ public class StripeSdkClient implements StripeClient {
             return new StripeCheckoutSession(session.getId(), session.getUrl());
 
         } catch (StripeException e) {
-            throw new RuntimeException("Error creating Stripe checkout session", e);
+            throw new StripeIntegrationException("Error creating Stripe checkout session", e);
         }
     }
 
@@ -80,8 +82,8 @@ public class StripeSdkClient implements StripeClient {
                     session.getPaymentIntent(),
                     leadIdMetadata
             );
-        } catch (StripeException e) {
-            throw new RuntimeException("Error parsing Stripe event", e);
+        } catch (Exception e) {
+            throw new StripeWebhookException("Error parsing Stripe event", e);
         }
     }
 
@@ -101,7 +103,7 @@ public class StripeSdkClient implements StripeClient {
                     leadIdMetadata
             );
         } catch (StripeException e) {
-            throw new RuntimeException("Error retrieving Stripe checkout session", e);
+            throw new StripeIntegrationException("Error retrieving Stripe checkout session", e);
         }
     }
 
@@ -115,7 +117,7 @@ public class StripeSdkClient implements StripeClient {
                     paymentIntent.getCurrency()
             );
         } catch (StripeException e) {
-            throw new RuntimeException("Error retrieving Stripe payment intent", e);
+            throw new StripeIntegrationException("Error retrieving Stripe payment intent", e);
         }
     }
 }

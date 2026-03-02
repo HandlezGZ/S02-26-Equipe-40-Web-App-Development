@@ -1,5 +1,6 @@
 package com.nocountry.conversionflow.conversionflow_api.application.usecase;
 
+import com.nocountry.conversionflow.conversionflow_api.application.exception.DuplicateLeadException;
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.Lead;
 import com.nocountry.conversionflow.conversionflow_api.domain.repository.LeadRepository;
 import org.slf4j.Logger;
@@ -30,7 +31,7 @@ public class CreateLeadUseCase {
         log.info("usecase.createLead.start externalId={} email={}", externalId, email);
         if (leadRepository.existsByExternalId(externalId)) {
             log.warn("usecase.createLead.duplicate externalId={}", externalId);
-            throw new RuntimeException("Lead already exists with this externalId");
+            throw new DuplicateLeadException("Lead already exists with this externalId");
         }
 
         Lead lead = new Lead(externalId, email);

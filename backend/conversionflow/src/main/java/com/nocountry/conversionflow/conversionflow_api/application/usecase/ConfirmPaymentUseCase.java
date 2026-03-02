@@ -1,5 +1,6 @@
 package com.nocountry.conversionflow.conversionflow_api.application.usecase;
 
+import com.nocountry.conversionflow.conversionflow_api.application.exception.InvalidInputException;
 import com.nocountry.conversionflow.conversionflow_api.config.properties.StripeProperties;
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.Lead;
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.Payment;
@@ -122,7 +123,7 @@ public class ConfirmPaymentUseCase {
 
     private StripePaymentIntentSnapshot retrievePaymentIntent(String paymentIntentId) {
         if (paymentIntentId == null || paymentIntentId.isBlank()) {
-            throw new IllegalStateException("Missing paymentIntentId in checkout session");
+            throw new InvalidInputException("Missing paymentIntentId in checkout session");
         }
         return stripeClient.retrievePaymentIntent(paymentIntentId);
     }

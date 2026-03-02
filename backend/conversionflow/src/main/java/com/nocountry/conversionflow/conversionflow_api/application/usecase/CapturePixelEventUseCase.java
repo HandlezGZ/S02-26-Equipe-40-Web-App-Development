@@ -1,5 +1,7 @@
 package com.nocountry.conversionflow.conversionflow_api.application.usecase;
 
+import com.nocountry.conversionflow.conversionflow_api.application.exception.InvalidInputException;
+import com.nocountry.conversionflow.conversionflow_api.application.exception.LeadNotFoundException;
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.Lead;
 import com.nocountry.conversionflow.conversionflow_api.domain.event.LeadConvertedEvent;
 import com.nocountry.conversionflow.conversionflow_api.domain.repository.LeadRepository;
@@ -44,7 +46,7 @@ public class CapturePixelEventUseCase {
             String utmCampaign
     ) {
         if (leadId == null && (externalId == null || externalId.isBlank())) {
-            throw new IllegalArgumentException("leadId or externalId is required");
+            throw new InvalidInputException("leadId or externalId is required");
         }
 
         Lead lead = resolveLead(leadId, externalId);
@@ -74,11 +76,11 @@ public class CapturePixelEventUseCase {
     private Lead resolveLead(Long leadId, String externalId) {
         if (leadId != null) {
             return leadRepository.findById(leadId)
-                    .orElseThrow(() -> new IllegalArgumentException("Lead not found: " + leadId));
+                    .orElseThrow(() -> new LeadNotFoundException("Lead not found: " + leadId));
         }
 
         return leadRepository.findByExternalId(externalId)
-                .orElseThrow(() -> new IllegalArgumentException("Lead not found for externalId: " + externalId));
+                .orElseThrow(() -> new LeadNotFoundException("Lead not found for externalId: " + externalId));
     }
 
     private String blankToNull(String value) {
