@@ -21,31 +21,6 @@
 
 ## 🧱 Arquitetura Full-Stack
 
-graph LR
-    %% Cores e Estilos
-    classDef frontend fill:#102a43,stroke:#48bbfe,stroke-width:2px,color:#fff;
-    classDef backend fill:#0a1520,stroke:#22C55E,stroke-width:2px,color:#fff;
-    classDef database fill:#316192,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef external fill:#2b2b2b,stroke:#a1a1a6,stroke-width:1px,color:#fff;
-
-    %% Nódulos
-    User((Usuário)):::external
-    Front[React / Framer<br>Nexus US]:::frontend
-    Stripe[Stripe Checkout]:::external
-    API[ConversionFlow API<br>Spring Boot]:::backend
-    DB[(PostgreSQL)]:::database
-    Meta[Meta Ads API]:::external
-    Google[Google Ads API]:::external
-    CRM[Pipedrive CRM]:::external
-
-    %% Conexões
-    User --&gt;|Acessa| Front
-    Front --&gt;|POST /checkout| Stripe
-    Stripe --&gt;|Webhook| API
-    API --&gt;|Persiste dados| DB
-    API --&gt;|Eventos Server-side| Meta
-    API --&gt;|Eventos Server-side| Google
-    API --&gt;|Sincroniza Lead| CRM
 
 ---
 
