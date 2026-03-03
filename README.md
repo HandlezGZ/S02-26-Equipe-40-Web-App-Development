@@ -20,18 +20,48 @@
 ---
 
 ## 🧱 Arquitetura Full-Stack
-flowchart TD
+```mermaid
+flowchart LR
+    %% FRONTEND
+    subgraph Frontend
+        A[Usuário]
+        B[React / Framer]
+    end
 
-A[React / Framer] --> B[Stripe Checkout]
-B --> C[Stripe Webhook]
-C --> D[ConversionFlow - Spring Boot]
+    %% PAGAMENTO
+    subgraph Stripe
+        C[Stripe Checkout]
+        D[Stripe Webhook]
+    end
 
-D --> E[Conversões Server-side]
-E --> F[Meta Ads]
-E --> G[Google Ads]
+    %% BACKEND
+    subgraph Backend
+        E[ConversionFlow API<br>Spring Boot]
+        F[Conversões Server-side]
+    end
 
-F --> H[Pipedrive CRM]
-G --> H
+    %% ADS
+    subgraph Plataformas de Ads
+        G[Meta Ads API]
+        H[Google Ads API]
+    end
+
+    %% CRM
+    subgraph CRM
+        I[Pipedrive]
+    end
+
+    %% FLUXO
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    F --> H
+    G --> I
+    H --> I
+```
 
 ---
 
