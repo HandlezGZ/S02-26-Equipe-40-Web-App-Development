@@ -20,21 +20,18 @@
 ---
 
 ## 🧱 Arquitetura Full-Stack
-```text
-React / Framer (Frontend) 
-   ↓ 
-Stripe Checkout 
-   ↓ 
-Webhook Stripe 
-   ↓ 
-ConversionFlow (Spring Boot) 
-   ↓ 
-Conversões Server-side 
-  ↙       ↘ 
-Meta Ads   Google Ads 
-   ↓ 
-Pipedrive (CRM)
-```
+flowchart TD
+
+A[React / Framer] --> B[Stripe Checkout]
+B --> C[Stripe Webhook]
+C --> D[ConversionFlow - Spring Boot]
+
+D --> E[Conversões Server-side]
+E --> F[Meta Ads]
+E --> G[Google Ads]
+
+F --> H[Pipedrive CRM]
+G --> H
 
 ---
 
