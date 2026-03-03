@@ -21,42 +21,21 @@
 
 ## 🧱 Arquitetura Full-Stack
 ```mermaid
+%%{init: {'theme': 'dark'}}%%
 flowchart LR
-    %% FRONTEND
-    subgraph Frontend
-        A[Usuário]
-        B[React / Framer]
-    end
+    classDef box fill:#111827,stroke:#374151,color:#ffffff,stroke-width:1px;
 
-    %% PAGAMENTO
-    subgraph Stripe
-        C[Stripe Checkout]
-        D[Stripe Webhook]
-    end
+    A[Usuário]:::box
+    B[React / Framer]:::box
+    C[Stripe Checkout]:::box
+    D[Stripe Webhook]:::box
+    E[ConversionFlow API<br>Spring Boot]:::box
+    F[Conversões Server-side]:::box
+    G[Meta Ads]:::box
+    H[Google Ads]:::box
+    I[Pipedrive CRM]:::box
 
-    %% BACKEND
-    subgraph Backend
-        E[ConversionFlow API<br>Spring Boot]
-        F[Conversões Server-side]
-    end
-
-    %% ADS
-    subgraph Plataformas de Ads
-        G[Meta Ads API]
-        H[Google Ads API]
-    end
-
-    %% CRM
-    subgraph CRM
-        I[Pipedrive]
-    end
-
-    %% FLUXO
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
+    A --> B --> C --> D --> E --> F
     F --> G
     F --> H
     G --> I
