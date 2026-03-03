@@ -125,5 +125,4 @@ cd backend/conversionflow
 ./mvnw spring-boot:run
 ```
 
-**Frontend:**
-Acesse o ambiente do [Framer](link-do-framer) para visualização dos componentes ou o [Deploy de Produção](link-do-deploy) para a experiência final.
+
