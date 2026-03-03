@@ -35,68 +35,59 @@ Conversões Server-side
 Meta Ads   Google Ads 
    ↓ 
 Pipedrive (CRM)
-💻 Front-end (Nexus US)
-A interface atua como a vitrine do produto, adotando a estética Dark Mode com Glassmorphism para transmitir segurança e alta tecnologia, focando na usabilidade e na captura eficiente de leads.
+```
 
-🏗️ Engenharia e UI/UX
-Componentização React: Desenvolvimento de Code Components 100% customizados dentro do ecossistema Framer.
+---
 
-Estilização Híbrida: Uso de CSS-in-JS combinado com <style> injetados para animações complexas (@keyframes) e responsividade avançada (ResizeObserver).
+## 💻 Front-end (Nexus US)
 
-Performance Vetorial: Todos os ícones e elementos gráficos (como a logo e animações de background) são SVGs matemáticos nativos, garantindo zero requisições HTTP extras e qualidade Retina/4K.
+A interface atua como a vitrine do produto, adotando a estética *Dark Mode* com *Glassmorphism* para transmitir segurança e alta tecnologia, focando na usabilidade e na captura eficiente de leads.
 
-Integração Assíncrona: Gerenciamento de estado (useState) e comunicação direta com a API via Fetch API para captura de leads e geração de checkouts dinâmicos.
+### 🏗️ Engenharia e UI/UX
+* **Componentização React:** Desenvolvimento de *Code Components* 100% customizados dentro do ecossistema Framer.
+* **Estilização Híbrida:** Uso de CSS-in-JS combinado com `<style>` injetados para animações complexas (`@keyframes`) e responsividade avançada (`ResizeObserver`).
+* **Performance Vetorial:** Todos os ícones e elementos gráficos (como a logo e animações de background) são SVGs matemáticos nativos, garantindo zero requisições HTTP extras e qualidade Retina/4K.
+* **Integração Assíncrona:** Gerenciamento de estado (`useState`) e comunicação direta com a API via `Fetch API` para captura de leads e geração de checkouts dinâmicos.
 
-📸 Telas Principais
-Landing Page: Hero section impactante focada em conversão com rolagem fluida.
+### 📸 Telas Principais
+1. **Landing Page:** *Hero section* impactante focada em conversão com rolagem fluida.
+2. **Autenticação (`NexusAuthPage`):** Captura de leads dinâmica integrada à API.
+3. **Pricing (`PricingCardsPalette`):** Layout interativo que envia o usuário diretamente ao checkout do Stripe.
+4. **Dashboard:** Painel do usuário utilizando SVGs dinâmicos para exibir o status da LLC e integrações.
 
-Autenticação (NexusAuthPage): Captura de leads dinâmica integrada à API.
+---
 
-Pricing (PricingCardsPalette): Layout interativo que envia o usuário diretamente ao checkout do Stripe.
+## ⚙️ Back-end (ConversionFlow)
 
-Dashboard: Painel do usuário utilizando SVGs dinâmicos para exibir o status da LLC e integrações.
+O backend atua como a **fonte única de verdade** para conversões e decisões de negócio. O ConversionFlow é uma aplicação backend desenvolvida em Java com Spring Boot, responsável por processar pagamentos reais via Stripe e registrar conversões de forma confiável para plataformas de marketing e CRM.
 
-⚙️ Back-end (ConversionFlow)
-O backend atua como a fonte única de verdade para conversões e decisões de negócio. O ConversionFlow é uma aplicação backend desenvolvida em Java com Spring Boot, responsável por processar pagamentos reais via Stripe e registrar conversões de forma confiável para plataformas de marketing e CRM.
+O sistema utiliza rastreamento *server-side*, garantindo dados precisos mesmo em cenários de bloqueio de cookies, restrições de privacidade e limitações de tracking *client-side*.
 
-O sistema utiliza rastreamento server-side, garantindo dados precisos mesmo em cenários de bloqueio de cookies, restrições de privacidade e limitações de tracking client-side.
+### 🎯 Objetivos do Backend
+* Registrar **apenas pagamentos aprovados** como conversões.
+* Garantir mensuração correta para Google Ads e Meta Ads.
+* Integrar dados de vendas com o Pipedrive (CRM).
+* Suportar campanhas de tráfego pago com dados absolutos e escaláveis.
+* Manter uma arquitetura clara e escalável.
 
-🎯 Objetivos do Backend
-Registrar apenas pagamentos aprovados como conversões.
+### 🧠 Princípio Central
+> *"Pagamentos confirmados definem conversões. Eventos de navegador são apenas complementares."*
 
-Garantir mensuração correta para Google Ads e Meta Ads.
+### 🔄 Fluxo de Conversão
+1. Usuário clica em um anúncio e realiza o pagamento via Stripe.
+2. Stripe envia um webhook (`payment_intent.succeeded`).
+3. Backend valida o pagamento e a conversão é registrada *server-side*.
+4. Evento é enviado para as APIs do Google Ads e Meta Ads.
+5. Lead/Venda é sincronizado com o Pipedrive.
 
-Integrar dados de vendas com o Pipedrive (CRM).
+### 🗄️ Banco de Dados
+**PostgreSQL** é utilizado por oferecer:
+* Alta confiabilidade transacional.
+* Suporte nativo a JSON/JSONB (essencial para payloads de webhook do Stripe).
+* Boa performance para aplicações orientadas a eventos.
 
-Suportar campanhas de tráfego pago com dados absolutos e escaláveis.
-
-Manter uma arquitetura clara e escalável.
-
-🧠 Princípio Central
-"Pagamentos confirmados definem conversões. Eventos de navegador são apenas complementares."
-
-🔄 Fluxo de Conversão
-Usuário clica em um anúncio e realiza o pagamento via Stripe.
-
-Stripe envia um webhook (payment_intent.succeeded).
-
-Backend valida o pagamento e a conversão é registrada server-side.
-
-Evento é enviado para as APIs do Google Ads e Meta Ads.
-
-Lead/Venda é sincronizado com o Pipedrive.
-
-🗄️ Banco de Dados
-PostgreSQL é utilizado por oferecer:
-
-Alta confiabilidade transacional.
-
-Suporte nativo a JSON/JSONB (essencial para payloads de webhook do Stripe).
-
-Boa performance para aplicações orientadas a eventos.
-
-📂 Estrutura do Projeto
-Plaintext
+### 📂 Estrutura do Projeto
+```text
 backend/conversionflow
 ├── src/main/java/com/nocountry/conversionflow
 │   ├── controller   # Endpoints REST e webhooks
@@ -110,26 +101,29 @@ backend/conversionflow
 │   ├── application.yml
 ├── pom.xml
 └── README.md
-👨‍💻 Equipe 40
+```
+
+---
+
+## 👨‍💻 Equipe 40
+
 A união de design estratégico, front-end performático e back-end à prova de falhas:
 
-Leonardo - Frontend Engineer & Product Designer - LinkedIn | GitHub
-
-Cássia - Frontend Engineer & Product Designer - LinkedIn | GitHub
-
-Webster - Tech Lead & Backend Developer - LinkedIn | GitHub
-
-Tirso - Backend Developer - LinkedIn | GitHub
+* **Leonardo** - Frontend Engineer & Product Designer - [LinkedIn](link) | [GitHub](link)
+* **Cássia** - Frontend Engineer & Product Designer - [LinkedIn](link) | [GitHub](link)
+* **Webster** - Tech Lead & Backend Developer - [LinkedIn](link) | [GitHub](link)
+* **Tirso** - Backend Developer - [LinkedIn](link) | [GitHub](link)
 
 
-🚀 Como Executar (Local)
-Backend:
+---
 
-Bash
+## 🚀 Como Executar (Local)
+
+**Backend:**
+```bash
 cd backend/conversionflow
 ./mvnw spring-boot:run
-Frontend:
-Acesse o ambiente do Framer para visualização dos componentes ou o Deploy de Produção para a experiência final.
+```
 
-
-Com isto, o vosso repositório vai ficar com um aspeto extremamente profissional e pronto para impressionar. Vais querer ajuda para testar os links das imagens no GitHub depois de fazeres o upload delas?
+**Frontend:**
+Acesse o ambiente do [Framer](link-do-framer) para visualização dos componentes ou o [Deploy de Produção](link-do-deploy) para a experiência final.
