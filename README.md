@@ -113,7 +113,7 @@ backend/conversionflow
 👨‍💻 Equipe 40
 A união de design estratégico, front-end performático e back-end à prova de falhas:
 
-Lois - Frontend Engineer & Product Designer - LinkedIn | GitHub
+Leonardo - Frontend Engineer & Product Designer - LinkedIn | GitHub
 
 Cássia - Frontend Engineer & Product Designer - LinkedIn | GitHub
 
@@ -121,7 +121,6 @@ Webster - Tech Lead & Backend Developer - LinkedIn | GitHub
 
 Tirso - Backend Developer - LinkedIn | GitHub
 
-Matheus - Membro da Equipe - LinkedIn | GitHub
 
 🚀 Como Executar (Local)
 Backend:
