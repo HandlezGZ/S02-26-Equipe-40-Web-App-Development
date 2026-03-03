@@ -6,10 +6,14 @@ import com.nocountry.conversionflow.conversionflow_api.domain.entity.ConversionD
 import com.nocountry.conversionflow.conversionflow_api.domain.enums.Provider;
 import com.nocountry.conversionflow.conversionflow_api.domain.event.LeadConvertedEvent;
 import com.nocountry.conversionflow.conversionflow_api.domain.repository.ConversionDispatchRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionPhase;
 
+@Slf4j
 @Component
 public class LeadConvertedListener {
 
@@ -22,7 +26,10 @@ public class LeadConvertedListener {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleLeadConverted(LeadConvertedEvent event) {
+
+        log.info("AFTER_COMMIT received LeadConvertedEvent: {}", event);
 
         String payload = serializeEvent(event);
 
@@ -33,8 +40,10 @@ public class LeadConvertedListener {
 
     private void createDispatch(Long leadId, Provider provider, String payload) {
         ConversionDispatch dispatch = new ConversionDispatch(leadId, provider, payload);
-        repository.save(dispatch);
+        ConversionDispatch dispatchsaved = repository.saveAndFlush(dispatch);
+    log.info(dispatchsaved.toString());
     }
+
 
     private String serializeEvent(LeadConvertedEvent event) {
         try {

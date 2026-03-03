@@ -2,13 +2,19 @@ package com.nocountry.conversionflow.conversionflow_api.controller.dto;
 
 public class CheckoutResponse {
 
-    private final String checkoutUrl;
+    private String checkoutUrl;
+    private String sessionId;
 
-    public CheckoutResponse(String checkoutUrl) {
+    public CheckoutResponse(String checkoutUrl, String sessionId) {
         this.checkoutUrl = checkoutUrl;
+        this.sessionId = sessionId;
     }
 
     public String getCheckoutUrl() {
         return checkoutUrl;
+    }
+
+    public String getSessionId() {
+        return sessionId;
     }
 }

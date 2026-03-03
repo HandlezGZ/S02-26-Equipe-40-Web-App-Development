@@ -1,11 +1,12 @@
 package com.nocountry.conversionflow.conversionflow_api.controller;
 
 import com.nocountry.conversionflow.conversionflow_api.service.stripe.StripeWebhookService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/webhooks/stripe")
+@RequestMapping("/stripe")
 public class StripeWebhookController {
 
     private final StripeWebhookService stripeWebhookService;
@@ -14,12 +15,12 @@ public class StripeWebhookController {
         this.stripeWebhookService = stripeWebhookService;
     }
 
-    @PostMapping
+    @PostMapping("/webhook")
     public ResponseEntity<String> handleWebhook(
             @RequestBody String payload,
-            @RequestHeader("Stripe-Signature") String sigHeader
+            @RequestHeader(name = "Stripe-Signature", required = false) String sigHeader
     ) {
-        stripeWebhookService.handleWebhook(payload, sigHeader);
+        stripeWebhookService.process(payload, sigHeader);
         return ResponseEntity.ok("ok");
     }
 }

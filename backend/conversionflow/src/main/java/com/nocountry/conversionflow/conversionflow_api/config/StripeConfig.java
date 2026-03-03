@@ -1,19 +1,23 @@
 package com.nocountry.conversionflow.conversionflow_api.config;
 
-import com.stripe.Stripe;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
-
 import com.nocountry.conversionflow.conversionflow_api.config.properties.StripeProperties;
+import com.stripe.Stripe;
+
+import jakarta.annotation.PostConstruct;
+
+import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class StripeConfig {
 
-    /**
-     * Ao subir a aplicação, configuramos a API Key do Stripe SDK.
-     * Isso evita ficar setando em todo método.
-     */
-    public StripeConfig(StripeProperties properties) {
-        Stripe.apiKey = properties.getSecretKey();
+    private final StripeProperties stripeProperties;
+
+    public StripeConfig(StripeProperties stripeProperties) {
+        this.stripeProperties = stripeProperties;
+    }
+
+    @PostConstruct
+    public void init() {
+        Stripe.apiKey = stripeProperties.getSecretKey();
     }
 }

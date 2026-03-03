@@ -6,11 +6,13 @@ import com.nocountry.conversionflow.conversionflow_api.domain.repository.Convers
 import com.nocountry.conversionflow.conversionflow_api.service.google.GoogleConversionsService;
 import com.nocountry.conversionflow.conversionflow_api.service.meta.MetaConversionsService;
 import com.nocountry.conversionflow.conversionflow_api.service.pipedrive.PipedriveService;
+import lombok.extern.java.Log;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Log
 @Component
 public class ConversionDispatchScheduler {
 
@@ -35,6 +37,7 @@ public class ConversionDispatchScheduler {
 
     @Scheduled(fixedDelay = 60000)
     public void processPendingDispatches() {
+        log.info("Processing pending conversion dispatches");
 
         List<ConversionDispatch> dispatches =
                 repository.findByStatusIn(List.of(DispatchStatus.PENDING, DispatchStatus.FAILED));

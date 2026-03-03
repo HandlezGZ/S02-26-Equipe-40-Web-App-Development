@@ -14,7 +14,11 @@ public class Lead {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "external_id", nullable = false, unique = true)
+    /**
+     * external_id normalmente é o sessionId do Stripe (ou outro id externo).
+     * Como ele pode não existir no momento de criar o Lead, mantemos nullable.
+     */
+    @Column(name = "external_id", unique = true)
     private String externalId;
 
     @Column(nullable = false, unique = true)
@@ -53,13 +57,31 @@ public class Lead {
     @Column(name = "converted_amount", precision = 15, scale = 2)
     private BigDecimal convertedAmount;
 
-    protected Lead() { }
+    protected Lead() {
+        // JPA
+    }
+
+    public Lead(String email) {
+        this.email = email;
+        this.status = LeadStatus.NEW;
+        this.createdAt = OffsetDateTime.now();
+    }
 
     public Lead(String externalId, String email) {
         this.externalId = externalId;
         this.email = email;
         this.status = LeadStatus.NEW;
         this.createdAt = OffsetDateTime.now();
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = OffsetDateTime.now();
+        }
+        if (this.status == null) {
+            this.status = LeadStatus.NEW;
+        }
     }
 
     // ===== Domain methods =====
@@ -87,6 +109,11 @@ public class Lead {
         if (fbc != null && !fbc.isBlank()) this.fbc = fbc;
     }
 
+    public void updateUtm(String utmSource, String utmCampaign) {
+        if (utmSource != null && !utmSource.isBlank()) this.utmSource = utmSource;
+        if (utmCampaign != null && !utmCampaign.isBlank()) this.utmCampaign = utmCampaign;
+    }
+
     // ===== Getters =====
 
     public Long getId() { return id; }
@@ -105,5 +132,23 @@ public class Lead {
     public OffsetDateTime getConvertedAt() { return convertedAt; }
     public BigDecimal getConvertedAmount() { return convertedAmount; }
 
-    public void setStatus(LeadStatus status) { this.status = status; }
+    // ===== Setters (necessários para integração) =====
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
+    }
+
+    public void setStatus(LeadStatus status) {
+        this.status = status;
+    }
+
+    /** Necessário para o webhook (caso você prefira set direto). */
+    public void setConvertedAt(OffsetDateTime convertedAt) {
+        this.convertedAt = convertedAt;
+    }
+
+    /** Necessário para o webhook (caso você prefira set direto). */
+    public void setConvertedAmount(BigDecimal convertedAmount) {
+        this.convertedAmount = convertedAmount;
+    }
 }

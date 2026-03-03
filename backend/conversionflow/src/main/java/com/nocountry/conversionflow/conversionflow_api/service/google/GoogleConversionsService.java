@@ -2,6 +2,7 @@ package com.nocountry.conversionflow.conversionflow_api.service.google;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nocountry.conversionflow.conversionflow_api.domain.event.LeadConvertedEvent;
+import com.nocountry.conversionflow.conversionflow_api.infrastructure.google.GoogleAdsClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -12,9 +13,11 @@ public class GoogleConversionsService {
     private static final Logger log = LoggerFactory.getLogger(GoogleConversionsService.class);
 
     private final ObjectMapper objectMapper;
+    private final GoogleAdsClient googleAdsClient;
 
-    public GoogleConversionsService(ObjectMapper objectMapper) {
+    public GoogleConversionsService(ObjectMapper objectMapper, GoogleAdsClient googleAdsClient) {
         this.objectMapper = objectMapper;
+        this.googleAdsClient = googleAdsClient;
     }
 
     public void sendConversionFromPayload(String payload) {
@@ -27,8 +30,7 @@ public class GoogleConversionsService {
     }
 
     /**
-     * MVP: stub com log.
-     * Aqui você conecta o client real do Google Ads (quando for fechar Sprint 6).
+     * Envia conversão para o Google Ads API (UploadClickConversions).
      */
     public void sendConversion(LeadConvertedEvent event) {
 
@@ -37,11 +39,12 @@ public class GoogleConversionsService {
             return;
         }
 
-        log.info("Google conversion (stub) sent. leadId={}, gclid={}, value={}, currency=? timestamp={}",
+        googleAdsClient.sendConversion(event);
+        log.info("Google conversion sent. leadId={}, gclid={}, value={}, currency={}, timestamp={}",
                 event.getLeadId(),
                 event.getGclid(),
                 event.getConvertedAmount(),
-                event.getConvertedAt()
-        );
+                event.getCurrency(),
+                event.getConvertedAt());
     }
 }

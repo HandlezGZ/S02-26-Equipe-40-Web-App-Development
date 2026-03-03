@@ -1,230 +1,156 @@
 package com.nocountry.conversionflow.conversionflow_api.service.stripe;
 
-import com.nocountry.conversionflow.conversionflow_api.config.properties.StripeProperties;
-import com.nocountry.conversionflow.conversionflow_api.domain.entity.Lead;
-import com.nocountry.conversionflow.conversionflow_api.domain.entity.Payment;
-import com.nocountry.conversionflow.conversionflow_api.domain.enums.PaymentStatus;
-import com.nocountry.conversionflow.conversionflow_api.domain.event.LeadConvertedEvent;
-import com.nocountry.conversionflow.conversionflow_api.domain.repository.LeadRepository;
-import com.nocountry.conversionflow.conversionflow_api.domain.repository.PaymentRepository;
-import com.stripe.exception.SignatureVerificationException;
-import com.stripe.exception.StripeException;
-import com.stripe.model.Event;
-import com.stripe.model.PaymentIntent;
-import com.stripe.model.checkout.Session;
-import com.stripe.net.Webhook;
-import com.stripe.param.checkout.SessionCreateParams;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
-import java.util.Locale;
-import java.util.Map;
+import com.nocountry.conversionflow.conversionflow_api.config.properties.StripeProperties;
+import com.nocountry.conversionflow.conversionflow_api.domain.entity.Lead;
+import com.nocountry.conversionflow.conversionflow_api.domain.entity.Payment;
+import com.nocountry.conversionflow.conversionflow_api.domain.event.LeadConvertedEvent;
+import com.nocountry.conversionflow.conversionflow_api.domain.enums.PaymentStatus;
+import com.nocountry.conversionflow.conversionflow_api.domain.repository.LeadRepository;
+import com.nocountry.conversionflow.conversionflow_api.domain.repository.PaymentRepository;
+
+import com.stripe.exception.SignatureVerificationException;
+import com.stripe.model.Event;
+import com.stripe.model.checkout.Session;
+import com.stripe.net.Webhook;
 
 @Service
 public class StripeWebhookService {
 
     private static final Logger log = LoggerFactory.getLogger(StripeWebhookService.class);
 
+    private static final String EVENT_CHECKOUT_COMPLETED = "checkout.session.completed";
+    private static final String METADATA_LEAD_ID = "leadId";
+    private static final String DEFAULT_CURRENCY = "brl";
+
     private final StripeProperties stripeProperties;
-    private final LeadRepository leadRepository;
     private final PaymentRepository paymentRepository;
+    private final LeadRepository leadRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     public StripeWebhookService(
             StripeProperties stripeProperties,
-            LeadRepository leadRepository,
             PaymentRepository paymentRepository,
+            LeadRepository leadRepository,
             ApplicationEventPublisher eventPublisher
     ) {
         this.stripeProperties = stripeProperties;
-        this.leadRepository = leadRepository;
         this.paymentRepository = paymentRepository;
+        this.leadRepository = leadRepository;
         this.eventPublisher = eventPublisher;
     }
 
-    // =========================================================
-    // CHECKOUT (consolidado aqui)
-    // =========================================================
-
+    /**
+     * Método chamado pelo controller do webhook.
+     * Mantemos @Transactional aqui para garantir atomicidade (Payment + Lead) e evitar warnings de self-invocation.
+     */
     @Transactional
-    public String createCheckoutSession(
-            Long leadId,
-            String plan,
-            String gclid,
-            String fbclid,
-            String fbp,
-            String fbc
-    ) throws StripeException {
+    public void process(String payload, String sigHeader) {
+        Event event = verifyAndParseEvent(payload, sigHeader);
 
-        Lead lead = leadRepository.findById(leadId)
-                .orElseThrow(() -> new IllegalArgumentException("Lead not found: " + leadId));
+        log.info("Stripe webhook recebido: type={} eventId={}", event.getType(), event.getId());
 
-        // Atualiza tracking e marca início do checkout
-        lead.updateTracking(gclid, fbclid, fbp, fbc);
-        lead.startCheckout();
-        leadRepository.save(lead);
-
-        String normalizedPlan = plan.trim().toLowerCase(Locale.ROOT);
-        String priceId = resolvePriceId(normalizedPlan);
-
-        SessionCreateParams params = SessionCreateParams.builder()
-                .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl(stripeProperties.getSuccessUrl())
-                .setCancelUrl(stripeProperties.getCancelUrl())
-                .putMetadata("leadId", String.valueOf(lead.getId()))
-                .putMetadata("plan", normalizedPlan)
-                .addLineItem(
-                        SessionCreateParams.LineItem.builder()
-                                .setQuantity(1L)
-                                .setPrice(priceId)
-                                .build()
-                )
-                .build();
-
-        Session session = Session.create(params);
-
-        if (session.getUrl() == null || session.getUrl().isBlank()) {
-            throw new IllegalStateException("Stripe did not return checkout URL");
-        }
-
-        return session.getUrl();
-    }
-
-    private String resolvePriceId(String normalizedPlan) {
-        Map<String, String> prices = stripeProperties.getPrices();
-        if (prices == null || prices.isEmpty()) {
-            throw new IllegalStateException("stripe.prices is not configured");
-        }
-
-        String priceId = prices.get(normalizedPlan);
-        if (priceId == null || priceId.isBlank()) {
-            throw new IllegalArgumentException("No Stripe priceId configured for plan: " + normalizedPlan);
-        }
-
-        return priceId;
-    }
-
-    // =========================================================
-    // WEBHOOK (source of truth)
-    // =========================================================
-
-    @Transactional
-    public void handleWebhook(String payload, String signatureHeader) {
-
-        Event event = constructStripeEvent(payload, signatureHeader);
-
-        // MVP: só tratamos checkout.session.completed
-        if (!"checkout.session.completed".equals(event.getType())) {
+        if (!EVENT_CHECKOUT_COMPLETED.equals(event.getType())) {
+            // Nunca quebre por evento não utilizado
+            log.info("Evento Stripe ignorado: {}", event.getType());
             return;
         }
 
-        Session session = extractSession(event);
+        handleCheckoutSessionCompleted(event);
+    }
 
-        String leadIdStr = getMetadata(session, "leadId");
-        if (leadIdStr == null) {
-            log.warn("Stripe session without leadId metadata. sessionId={}", session.getId());
-            return;
+    private Event verifyAndParseEvent(String payload, String sigHeader) {
+        String secret = stripeProperties.getWebhookSecret();
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("STRIPE_WEBHOOK_SECRET não configurado");
+        }
+        if (sigHeader == null || sigHeader.isBlank()) {
+            throw new IllegalArgumentException("Header Stripe-Signature ausente");
         }
 
-        Long leadId;
         try {
-            leadId = Long.valueOf(leadIdStr);
-        } catch (Exception e) {
-            log.warn("Invalid leadId metadata. leadId={}, sessionId={}", leadIdStr, session.getId());
+            return Webhook.constructEvent(payload, sigHeader, secret);
+        } catch (SignatureVerificationException e) {
+            log.error("Assinatura inválida no webhook Stripe: {}", e.getMessage());
+            throw new IllegalArgumentException("Assinatura inválida");
+        }
+    }
+
+    private void handleCheckoutSessionCompleted(Event event) {
+        final String eventId = event.getId();
+
+        // ✅ Idempotência por event.id
+        if (paymentRepository.existsByStripeEventId(eventId)) {
+            log.warn("Evento já processado (idempotência por stripe_event_id): {}", eventId);
             return;
         }
 
-        Lead lead = leadRepository.findById(leadId).orElse(null);
-        if (lead == null) {
-            log.warn("Lead not found for leadId={}", leadId);
+        Session session = deserializeSessionRobust(event);
+
+        final String sessionId = safeTrim(session.getId());
+        final String paymentIntentId = safeTrim(session.getPaymentIntent()); // transaction_id
+        final Long amountTotalCents = session.getAmountTotal();
+        final String currency = normalizeCurrency(session.getCurrency());
+        final String leadIdStr = extractLeadId(session);
+
+        log.info("checkout.session.completed: sessionId={} paymentIntentId={} amountTotalCents={} currency={} leadIdStr={}",
+                sessionId, paymentIntentId, amountTotalCents, currency, leadIdStr);
+
+        if (sessionId == null) {
+            throw new IllegalStateException("session.id ausente no checkout.session.completed");
+        }
+
+        // `transaction_id` é NOT NULL no seu Payment.
+        if (paymentIntentId == null) {
+            throw new IllegalStateException(
+                    "payment_intent ausente no checkout.session.completed (sessionId=" + sessionId + ")"
+            );
+        }
+
+        // ✅ Idempotência extra por transação
+        if (paymentRepository.existsByTransactionId(paymentIntentId)) {
+            log.warn("Transação já registrada (idempotência por transaction_id): {}", paymentIntentId);
             return;
         }
 
-        String stripeEventId = event.getId();
-        String stripeSessionId = session.getId();
-        String paymentIntentId = session.getPaymentIntent();
+        Lead lead = resolveLead(sessionId, leadIdStr);
 
-        // Idempotência forte: se já processamos este evento ou este paymentIntent, ignora
-        if (stripeEventId != null && paymentRepository.existsByStripeEventId(stripeEventId)) {
-            log.info("Webhook already processed (stripeEventId={})", stripeEventId);
-            return;
-        }
-        if (paymentIntentId != null && paymentRepository.existsByTransactionId(paymentIntentId)) {
-            log.info("Payment already processed (paymentIntentId={})", paymentIntentId);
-            return;
-        }
+        OffsetDateTime now = OffsetDateTime.now();
+        BigDecimal convertedAmount = toMoney(amountTotalCents);
 
-        // Obtém valor/currency via PaymentIntent (mais confiável)
-        PaymentIntent paymentIntent = retrievePaymentIntent(paymentIntentId);
-
-        long amountCents = paymentIntent.getAmount() == null ? 0L : paymentIntent.getAmount();
-        String currency = paymentIntent.getCurrency() == null ? stripeProperties.getCurrency() : paymentIntent.getCurrency();
-
-        BigDecimal amount = BigDecimal.valueOf(amountCents).divide(BigDecimal.valueOf(100));
-
-        // Salva Payment (fonte da verdade)
+        // ✅ Persistir Payment
         Payment payment = new Payment();
-        payment.setStripeEventId(stripeEventId);
-        payment.setStripeSessionId(stripeSessionId);
+        payment.setStripeEventId(eventId);
+        payment.setStripeSessionId(sessionId);
         payment.setTransactionId(paymentIntentId);
-        payment.setAmountCents(amountCents);
+        payment.setAmountCents(amountTotalCents != null ? amountTotalCents : 0L);
         payment.setCurrency(currency);
+
+        // ⚠️ Se seu enum não tem SUCCEEDED, troque pelo valor existente (ex.: PAID)
         payment.setStatus(PaymentStatus.PAID);
+
         payment.setLead(lead);
-        payment.setCreatedAt(OffsetDateTime.now());
+        payment.setCreatedAt(now);
+
         paymentRepository.save(payment);
 
-        // Atualiza Lead como WON (idempotente pelo Payment)
-        if (!lead.isWon()) {
-            lead.markAsWon(amount);
-            leadRepository.save(lead);
-        }
+        // ✅ Atualizar Lead usando método de domínio
+        lead.markAsWon(convertedAmount);
+        leadRepository.save(lead);
 
-        // Publica evento AFTER_COMMIT (listener vai criar dispatches)
-        publishLeadConvertedEvent(lead, paymentIntentId);
-    }
+        log.info("Pagamento confirmado e persistido: leadId={} paymentId={} sessionId={} paymentIntentId={}",
+                lead.getId(), payment.getId(), sessionId, paymentIntentId);
 
-    private Event constructStripeEvent(String payload, String signatureHeader) {
-        try {
-            return Webhook.constructEvent(payload, signatureHeader, stripeProperties.getWebhookSecret());
-        } catch (SignatureVerificationException e) {
-            throw new RuntimeException("Invalid Stripe signature", e);
-        } catch (Exception e) {
-            throw new RuntimeException("Error parsing Stripe event", e);
-        }
-    }
-
-    private Session extractSession(Event event) {
-        return (Session) event.getDataObjectDeserializer()
-                .getObject()
-                .orElseThrow(() -> new RuntimeException("Invalid session object"));
-    }
-
-    private String getMetadata(Session session, String key) {
-        if (session.getMetadata() == null) return null;
-        String value = session.getMetadata().get(key);
-        if (value == null || value.isBlank()) return null;
-        return value;
-    }
-
-    private PaymentIntent retrievePaymentIntent(String paymentIntentId) {
-        if (paymentIntentId == null || paymentIntentId.isBlank()) {
-            throw new IllegalStateException("Missing paymentIntentId in checkout session");
-        }
-        try {
-            return PaymentIntent.retrieve(paymentIntentId);
-        } catch (StripeException e) {
-            throw new RuntimeException("Error retrieving PaymentIntent", e);
-        }
-    }
-
-    private void publishLeadConvertedEvent(Lead lead, String paymentIntentId) {
-        LeadConvertedEvent event = new LeadConvertedEvent(
+        // ✅ Dispara evento de domínio para enfileirar dispatches (Meta/Google/Pipedrive) AFTER_COMMIT
+        LeadConvertedEvent convertedEvent = new LeadConvertedEvent(
                 lead.getId(),
                 lead.getExternalId(),
                 lead.getEmail(),
@@ -233,11 +159,88 @@ public class StripeWebhookService {
                 lead.getFbp(),
                 lead.getFbc(),
                 paymentIntentId,
-                lead.getConvertedAmount(),
-                lead.getConvertedAt()
+                convertedAmount,
+                currency,
+                now
         );
 
-        log.info("Publishing LeadConvertedEvent leadId={}, paymentIntentId={}", lead.getId(), paymentIntentId);
-        eventPublisher.publishEvent(event);
+        eventPublisher.publishEvent(convertedEvent);
+    }
+
+    private String extractLeadId(Session session) {
+        String leadIdStr = null;
+
+        if (session.getMetadata() != null) {
+            leadIdStr = session.getMetadata().get(METADATA_LEAD_ID);
+        }
+        if (leadIdStr == null || leadIdStr.isBlank()) {
+            leadIdStr = session.getClientReferenceId();
+        }
+
+        return safeTrim(leadIdStr);
+    }
+
+    private String normalizeCurrency(String currency) {
+        String c = safeTrim(currency);
+        if (c == null) return DEFAULT_CURRENCY;
+        return c.toLowerCase();
+    }
+
+    private BigDecimal toMoney(Long amountCents) {
+        if (amountCents == null) return BigDecimal.ZERO;
+        // 12345 -> 123.45
+        return BigDecimal.valueOf(amountCents).movePointLeft(2);
+    }
+
+    /**
+     * Desserialização robusta para evitar falhas quando a API version do evento
+     * não bate com o SDK do Stripe (caso comum com Stripe CLI).
+     *
+     * Estratégia:
+     * - usar o JSON bruto de event.getData().getObject().toJson()
+     * - parsear com Session.GSON (bem tolerante)
+     */
+    private Session deserializeSessionRobust(Event event) {
+        try {
+            String json = event.getData().getObject().toJson();
+            Session session = Session.GSON.fromJson(json, Session.class);
+
+            if (session == null || session.getId() == null || session.getId().isBlank()) {
+                throw new IllegalArgumentException("Session inválida após desserialização manual");
+            }
+
+            return session;
+        } catch (Exception e) {
+            log.error("Falha ao desserializar Session do evento {} (type={}): {}",
+                    event.getId(), event.getType(), e.getMessage(), e);
+            throw new IllegalArgumentException("Não foi possível desserializar o objeto do evento como Session", e);
+        }
+    }
+
+    private Lead resolveLead(String sessionId, String leadIdStr) {
+        // 1) por leadId (metadata/client_reference_id)
+        if (leadIdStr != null && !leadIdStr.isBlank()) {
+            Long leadId;
+            try {
+                leadId = Long.valueOf(leadIdStr);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("leadId inválido no webhook: " + leadIdStr);
+            }
+
+            return leadRepository.findById(leadId)
+                    .orElseThrow(() -> new IllegalArgumentException("Lead não encontrado: " + leadId));
+        }
+
+        // 2) fallback: por external_id == sessionId (se você salvou isso no checkout)
+        return leadRepository.findByExternalId(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Não foi possível correlacionar Lead: leadId ausente e nenhum lead com external_id=" + sessionId
+                ));
+    }
+
+    private String safeTrim(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        return t.isEmpty() ? null : t;
     }
 }
