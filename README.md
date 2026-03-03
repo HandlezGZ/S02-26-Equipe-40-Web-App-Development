@@ -20,7 +20,21 @@
 ---
 
 ## 🧱 Arquitetura Full-Stack
-
+```text
+React / Framer (Frontend) 
+   ↓ 
+Stripe Checkout 
+   ↓ 
+Webhook Stripe 
+   ↓ 
+ConversionFlow (Spring Boot) 
+   ↓ 
+Conversões Server-side 
+  ↙       ↘ 
+Meta Ads   Google Ads 
+   ↓ 
+Pipedrive (CRM)
+```
 
 ---
 
