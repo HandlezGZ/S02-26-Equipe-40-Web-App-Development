@@ -14,6 +14,8 @@ public class StripeProperties {
     private String successUrl;
     private String cancelUrl;
 
+    private String currency;
+
     // plan -> priceId
     private Map<String, String> prices = new HashMap<>();
 
@@ -31,4 +33,12 @@ public class StripeProperties {
 
     public Map<String, String> getPrices() { return prices; }
     public void setPrices(Map<String, String> prices) { this.prices = prices; }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
 }

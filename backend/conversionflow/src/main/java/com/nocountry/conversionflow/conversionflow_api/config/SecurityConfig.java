@@ -28,7 +28,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/leads/**",
                                 "/checkout/**",
-                                "/stripe/webhook",
+                                "/webhooks/stripe",
                                 "/tracking/**",
                                 "/error"
                         ).permitAll()
