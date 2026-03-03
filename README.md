@@ -1,10 +1,10 @@
 # 🇺🇸 Nexus US & ConversionFlow | Plataforma Full-Stack
 
-![Capa do Projeto](link-para-uma-imagem-bonita-da-home-page-aqui)
+![Capa do Projeto](https://github.com/user-attachments/assets/4fe83855-faa3-4de7-a09c-f5bc13d00284)
 
 > **Sobre o projeto:** Uma solução completa de e-commerce e formação de empresas (LLCs) nos EUA, projetada para founders globais. Une uma interface premium (focada em conversão e UX) a um back-end robusto focado no rastreamento confiável de pagamentos via Stripe e integração com plataformas de anúncios (Google/Meta Ads) e CRM.
 
-🔗 **[Acesse o Deploy da Aplicação Aqui](link-do-deploy)**
+🔗 **[Acesse o Deploy da Aplicação Aqui](https://nnexus.framer.website/)**
 
 ## 🚀 Tecnologias Utilizadas
 
@@ -109,10 +109,10 @@ backend/conversionflow
 
 A união de design estratégico, front-end performático e back-end à prova de falhas:
 
-* **Leonardo** - Frontend Engineer & Product Designer - [LinkedIn](www.linkedin.com/in/leonardoferrza) | [GitHub](https://github.com/leonardoferrza)
-* **Cássia** - Frontend Engineer & Product Designer - [LinkedIn](https://www.linkedin.com/in/cassia-irene/) | [GitHub](https://github.com/Cassia-Irene)
-* **Webster** - Backend Developer - [LinkedIn](https://www.linkedin.com/in/webster-spacacheri/) | [GitHub](https://github.com/Webster-TI)
-* **Tirso** - Backend Developer - [LinkedIn](https://www.linkedin.com/in/tirsoalcazar/) | [GitHub](https://github.com/HandlezGZ)
+* **Cássia Nascimento** - Frontend Engineer & Product Designer - [LinkedIn](https://www.linkedin.com/in/cassia-irene/) | [GitHub](https://github.com/Cassia-Irene)
+* **Leonardo Ferreira** - Frontend Engineer & Product Designer - [LinkedIn](https://www.linkedin.com/in/leonardoferrza) | [GitHub](https://github.com/leonardoferrza)
+* **Tirso Alcazar** - Backend Developer - [LinkedIn](https://www.linkedin.com/in/tirsoalcazar/) | [GitHub](https://github.com/HandlezGZ)
+* **Webster Spacacheri** - Backend Developer - [LinkedIn](https://www.linkedin.com/in/webster-spacacheri/) | [GitHub](https://github.com/Webster-TI)
 
 
 ---
