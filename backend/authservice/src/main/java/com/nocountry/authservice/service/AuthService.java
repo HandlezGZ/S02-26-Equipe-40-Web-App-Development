@@ -8,6 +8,8 @@ import com.nocountry.authservice.dto.RegisterRequest;
 import com.nocountry.authservice.integration.conversionflow.ConversionFlowLeadClient;
 import com.nocountry.authservice.integration.conversionflow.CreateLeadRequest;
 import com.nocountry.authservice.repository.UserRepository;
+import com.nocountry.authservice.service.outbox.UserRegisteredEventPayload;
+import com.nocountry.authservice.service.outbox.UserRegisteredOutboxPublisher;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,17 +24,20 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final ConversionFlowLeadClient conversionFlowLeadClient;
+    private final UserRegisteredOutboxPublisher userRegisteredOutboxPublisher;
 
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
-            ConversionFlowLeadClient conversionFlowLeadClient
+            ConversionFlowLeadClient conversionFlowLeadClient,
+            UserRegisteredOutboxPublisher userRegisteredOutboxPublisher
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.conversionFlowLeadClient = conversionFlowLeadClient;
+        this.userRegisteredOutboxPublisher = userRegisteredOutboxPublisher;
     }
 
     @Transactional
@@ -73,6 +78,14 @@ public class AuthService {
         user.setProvider(AuthProvider.LOCAL);
 
         User savedUser = userRepository.save(user);
+        userRegisteredOutboxPublisher.publish(savedUser, new UserRegisteredEventPayload.Attribution(
+                request.gclid(),
+                request.fbclid(),
+                request.fbp(),
+                request.fbc(),
+                request.utmSource(),
+                request.utmCampaign()
+        ));
         conversionFlowLeadClient.createLead(new CreateLeadRequest(
                 savedUser.getId().toString(),
                 savedUser.getEmail(),
@@ -144,6 +157,14 @@ public class AuthService {
         }
 
         if (createdNewUser) {
+            userRegisteredOutboxPublisher.publish(user, new UserRegisteredEventPayload.Attribution(
+                    null,
+                    null,
+                    null,
+                    null,
+                    "google",
+                    null
+            ));
             conversionFlowLeadClient.createLead(new CreateLeadRequest(
                     user.getId().toString(),
                     user.getEmail(),
