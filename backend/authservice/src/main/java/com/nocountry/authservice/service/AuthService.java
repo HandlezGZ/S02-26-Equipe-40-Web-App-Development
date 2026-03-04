@@ -10,6 +10,7 @@ import com.nocountry.authservice.integration.conversionflow.CreateLeadRequest;
 import com.nocountry.authservice.repository.UserRepository;
 import com.nocountry.authservice.service.outbox.UserRegisteredEventPayload;
 import com.nocountry.authservice.service.outbox.UserRegisteredOutboxPublisher;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,19 +26,22 @@ public class AuthService {
     private final JwtService jwtService;
     private final ConversionFlowLeadClient conversionFlowLeadClient;
     private final UserRegisteredOutboxPublisher userRegisteredOutboxPublisher;
+    private final String leadIntegrationMode;
 
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             ConversionFlowLeadClient conversionFlowLeadClient,
-            UserRegisteredOutboxPublisher userRegisteredOutboxPublisher
+            UserRegisteredOutboxPublisher userRegisteredOutboxPublisher,
+            @Value("${app.integration.lead-mode:sync}") String leadIntegrationMode
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.conversionFlowLeadClient = conversionFlowLeadClient;
         this.userRegisteredOutboxPublisher = userRegisteredOutboxPublisher;
+        this.leadIntegrationMode = leadIntegrationMode;
     }
 
     @Transactional
@@ -51,15 +55,15 @@ public class AuthService {
                 throw new IllegalArgumentException("email_already_registered");
             }
 
-            conversionFlowLeadClient.createLead(new CreateLeadRequest(
-                    existingUser.getId().toString(),
-                    existingUser.getEmail(),
-                    request.gclid(),
-                    request.fbclid(),
-                    request.fbp(),
-                    request.fbc(),
-                    request.utmSource(),
-                    request.utmCampaign()
+            createLeadSyncIfEnabled(new CreateLeadRequest(
+                existingUser.getId().toString(),
+                existingUser.getEmail(),
+                request.gclid(),
+                request.fbclid(),
+                request.fbp(),
+                request.fbc(),
+                request.utmSource(),
+                request.utmCampaign()
             ));
 
             String replayToken = jwtService.generateAccessToken(existingUser);
@@ -86,15 +90,15 @@ public class AuthService {
                 request.utmSource(),
                 request.utmCampaign()
         ));
-        conversionFlowLeadClient.createLead(new CreateLeadRequest(
-                savedUser.getId().toString(),
-                savedUser.getEmail(),
-                request.gclid(),
-                request.fbclid(),
-                request.fbp(),
-                request.fbc(),
-                request.utmSource(),
-                request.utmCampaign()
+        createLeadSyncIfEnabled(new CreateLeadRequest(
+            savedUser.getId().toString(),
+            savedUser.getEmail(),
+            request.gclid(),
+            request.fbclid(),
+            request.fbp(),
+            request.fbc(),
+            request.utmSource(),
+            request.utmCampaign()
         ));
         String token = jwtService.generateAccessToken(savedUser);
 
@@ -165,15 +169,15 @@ public class AuthService {
                     "google",
                     null
             ));
-            conversionFlowLeadClient.createLead(new CreateLeadRequest(
-                    user.getId().toString(),
-                    user.getEmail(),
-                    null,
-                    null,
-                    null,
-                    null,
-                    "google",
-                    null
+            createLeadSyncIfEnabled(new CreateLeadRequest(
+                user.getId().toString(),
+                user.getEmail(),
+                null,
+                null,
+                null,
+                null,
+                "google",
+                null
             ));
         }
 
@@ -186,5 +190,11 @@ public class AuthService {
                 user.getId().toString(),
                 user.getEmail()
         );
+    }
+
+    private void createLeadSyncIfEnabled(CreateLeadRequest request) {
+        if ("sync".equalsIgnoreCase(leadIntegrationMode)) {
+            conversionFlowLeadClient.createLead(request);
+        }
     }
 }
