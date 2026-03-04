@@ -1,5 +1,6 @@
 package com.nocountry.authservice.controller.internal;
 
+import com.nocountry.authservice.config.ApiPaths;
 import com.nocountry.authservice.integration.conversionflow.ConversionFlowClientDiagnostics;
 import com.nocountry.authservice.integration.conversionflow.ConversionFlowLeadClient;
 import org.springframework.http.ResponseEntity;
@@ -8,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/internal/diagnostics")
+@RequestMapping(ApiPaths.INTERNAL_V1 + "/diagnostics")
 public class IntegrationDiagnosticsController {
 
     private final ConversionFlowLeadClient conversionFlowLeadClient;

@@ -1,5 +1,6 @@
 package com.nocountry.authservice.controller;
 
+import com.nocountry.authservice.config.ApiPaths;
 import com.nocountry.authservice.dto.AuthTokenResponse;
 import com.nocountry.authservice.dto.LoginRequest;
 import com.nocountry.authservice.dto.RegisterRequest;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping({ApiPaths.PUBLIC_AUTH_V1, ApiPaths.LEGACY_AUTH})
 public class AuthController {
 
     private final AuthService authService;
