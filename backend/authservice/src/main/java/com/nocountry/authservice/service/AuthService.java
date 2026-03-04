@@ -5,12 +5,9 @@ import com.nocountry.authservice.domain.User;
 import com.nocountry.authservice.dto.AuthTokenResponse;
 import com.nocountry.authservice.dto.LoginRequest;
 import com.nocountry.authservice.dto.RegisterRequest;
-import com.nocountry.authservice.integration.conversionflow.ConversionFlowLeadClient;
-import com.nocountry.authservice.integration.conversionflow.CreateLeadRequest;
 import com.nocountry.authservice.repository.UserRepository;
 import com.nocountry.authservice.service.outbox.UserRegisteredEventPayload;
 import com.nocountry.authservice.service.outbox.UserRegisteredOutboxPublisher;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,24 +21,18 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final ConversionFlowLeadClient conversionFlowLeadClient;
     private final UserRegisteredOutboxPublisher userRegisteredOutboxPublisher;
-    private final String leadIntegrationMode;
 
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
-            ConversionFlowLeadClient conversionFlowLeadClient,
-            UserRegisteredOutboxPublisher userRegisteredOutboxPublisher,
-            @Value("${app.integration.lead-mode:sync}") String leadIntegrationMode
+            UserRegisteredOutboxPublisher userRegisteredOutboxPublisher
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
-        this.conversionFlowLeadClient = conversionFlowLeadClient;
         this.userRegisteredOutboxPublisher = userRegisteredOutboxPublisher;
-        this.leadIntegrationMode = leadIntegrationMode;
     }
 
     @Transactional
@@ -54,17 +45,6 @@ public class AuthService {
             if (existingUser.getPasswordHash() == null || !passwordEncoder.matches(request.password(), existingUser.getPasswordHash())) {
                 throw new IllegalArgumentException("email_already_registered");
             }
-
-            createLeadSyncIfEnabled(new CreateLeadRequest(
-                existingUser.getId().toString(),
-                existingUser.getEmail(),
-                request.gclid(),
-                request.fbclid(),
-                request.fbp(),
-                request.fbc(),
-                request.utmSource(),
-                request.utmCampaign()
-            ));
 
             String replayToken = jwtService.generateAccessToken(existingUser);
             return new AuthTokenResponse(
@@ -89,16 +69,6 @@ public class AuthService {
                 request.fbc(),
                 request.utmSource(),
                 request.utmCampaign()
-        ));
-        createLeadSyncIfEnabled(new CreateLeadRequest(
-            savedUser.getId().toString(),
-            savedUser.getEmail(),
-            request.gclid(),
-            request.fbclid(),
-            request.fbp(),
-            request.fbc(),
-            request.utmSource(),
-            request.utmCampaign()
         ));
         String token = jwtService.generateAccessToken(savedUser);
 
@@ -169,16 +139,6 @@ public class AuthService {
                     "google",
                     null
             ));
-            createLeadSyncIfEnabled(new CreateLeadRequest(
-                user.getId().toString(),
-                user.getEmail(),
-                null,
-                null,
-                null,
-                null,
-                "google",
-                null
-            ));
         }
 
         String token = jwtService.generateAccessToken(user);
@@ -190,11 +150,5 @@ public class AuthService {
                 user.getId().toString(),
                 user.getEmail()
         );
-    }
-
-    private void createLeadSyncIfEnabled(CreateLeadRequest request) {
-        if ("sync".equalsIgnoreCase(leadIntegrationMode)) {
-            conversionFlowLeadClient.createLead(request);
-        }
     }
 }

@@ -4,7 +4,6 @@ import com.nocountry.authservice.config.ApiPaths;
 import com.nocountry.authservice.dto.AuthTokenResponse;
 import com.nocountry.authservice.dto.LoginRequest;
 import com.nocountry.authservice.dto.RegisterRequest;
-import com.nocountry.authservice.integration.conversionflow.ConversionFlowIntegrationException;
 import com.nocountry.authservice.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -56,8 +55,4 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", exception.getMessage()));
     }
 
-    @ExceptionHandler(ConversionFlowIntegrationException.class)
-    public ResponseEntity<Map<String, String>> handleLeadIntegrationFailure(ConversionFlowIntegrationException exception) {
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", exception.getMessage()));
-    }
 }
