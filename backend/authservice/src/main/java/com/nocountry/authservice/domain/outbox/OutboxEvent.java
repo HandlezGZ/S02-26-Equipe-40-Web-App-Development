@@ -49,11 +49,18 @@ public class OutboxEvent {
     @Column(name = "error_reason", columnDefinition = "TEXT")
     private String errorReason;
 
+    @Column(name = "attempt_count", nullable = false)
+    private int attemptCount;
+
+    @Column(name = "next_attempt_at")
+    private OffsetDateTime nextAttemptAt;
+
     @PrePersist
     public void onCreate() {
         if (status == null) {
             status = OutboxEventStatus.PENDING;
         }
+        nextAttemptAt = OffsetDateTime.now();
         createdAt = OffsetDateTime.now();
     }
 
@@ -127,5 +134,21 @@ public class OutboxEvent {
 
     public void setErrorReason(String errorReason) {
         this.errorReason = errorReason;
+    }
+
+    public int getAttemptCount() {
+        return attemptCount;
+    }
+
+    public void setAttemptCount(int attemptCount) {
+        this.attemptCount = attemptCount;
+    }
+
+    public OffsetDateTime getNextAttemptAt() {
+        return nextAttemptAt;
+    }
+
+    public void setNextAttemptAt(OffsetDateTime nextAttemptAt) {
+        this.nextAttemptAt = nextAttemptAt;
     }
 }
