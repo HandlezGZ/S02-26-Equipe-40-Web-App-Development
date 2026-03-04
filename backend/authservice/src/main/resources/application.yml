@@ -30,12 +30,16 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
   endpoint:
     health:
       probes:
         enabled: true
       show-details: always
+
+logging:
+  pattern:
+    level: "%5p [corr:%X{correlationId:-}]"
 
 app:
   jwt:

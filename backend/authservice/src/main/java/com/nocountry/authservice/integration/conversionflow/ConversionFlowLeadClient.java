@@ -1,5 +1,10 @@
 package com.nocountry.authservice.integration.conversionflow;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -11,9 +16,12 @@ import org.springframework.web.client.RestClientResponseException;
 
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Component
 public class ConversionFlowLeadClient {
+
+    private static final Logger log = LoggerFactory.getLogger(ConversionFlowLeadClient.class);
 
     private final RestClient restClient;
     private final String apiKey;
@@ -22,10 +30,20 @@ public class ConversionFlowLeadClient {
     private final int circuitFailureThreshold;
     private final long circuitOpenMs;
     private final AtomicInteger consecutiveFailures = new AtomicInteger(0);
+    private final AtomicLong successCount = new AtomicLong(0);
+    private final AtomicLong failureCount = new AtomicLong(0);
+    private final AtomicLong retryCount = new AtomicLong(0);
+    private final AtomicLong circuitOpenCount = new AtomicLong(0);
     private volatile Instant circuitOpenedAt;
+    private final Counter successCounter;
+    private final Counter failureCounter;
+    private final Counter retryCounter;
+    private final Counter circuitOpenCounter;
+    private final Timer requestTimer;
 
     public ConversionFlowLeadClient(
             RestClient.Builder restClientBuilder,
+            MeterRegistry meterRegistry,
             @Value("${app.conversionflow.base-url}") String baseUrl,
             @Value("${app.conversionflow.api-key:}") String apiKey,
             @Value("${app.conversionflow.timeout-ms:2000}") int timeoutMs,
@@ -47,17 +65,26 @@ public class ConversionFlowLeadClient {
         this.retryBackoffMs = retryBackoffMs;
         this.circuitFailureThreshold = circuitFailureThreshold;
         this.circuitOpenMs = circuitOpenMs;
+        this.successCounter = meterRegistry.counter("integration.conversionflow.lead.success");
+        this.failureCounter = meterRegistry.counter("integration.conversionflow.lead.failure");
+        this.retryCounter = meterRegistry.counter("integration.conversionflow.lead.retry");
+        this.circuitOpenCounter = meterRegistry.counter("integration.conversionflow.lead.circuit.open");
+        this.requestTimer = meterRegistry.timer("integration.conversionflow.lead.request.duration");
     }
 
     public void createLead(CreateLeadRequest request) {
         if (isCircuitOpen()) {
+            circuitOpenCount.incrementAndGet();
+            circuitOpenCounter.increment();
             throw new ConversionFlowIntegrationException("conversionflow_circuit_open", null);
         }
 
         ConversionFlowIntegrationException lastException = null;
         for (int attempt = 1; attempt <= retryMaxAttempts; attempt++) {
             try {
+                Timer.Sample sample = Timer.start();
                 executeCreateLead(request);
+                sample.stop(requestTimer);
                 onSuccess();
                 return;
             } catch (ConversionFlowIntegrationException exception) {
@@ -66,6 +93,9 @@ public class ConversionFlowLeadClient {
                 if (!retryable || attempt == retryMaxAttempts) {
                     break;
                 }
+                retryCount.incrementAndGet();
+                retryCounter.increment();
+                log.warn("conversionflow.lead.retry attempt={} externalId={} reason={}", attempt, request.externalId(), exception.getMessage());
                 sleepBackoff();
             }
         }
@@ -123,13 +153,22 @@ public class ConversionFlowLeadClient {
     private void onSuccess() {
         consecutiveFailures.set(0);
         circuitOpenedAt = null;
+        successCount.incrementAndGet();
+        successCounter.increment();
+        log.info("conversionflow.lead.success");
     }
 
     private void onFailure() {
         int failures = consecutiveFailures.incrementAndGet();
+        failureCount.incrementAndGet();
+        failureCounter.increment();
+        log.error("conversionflow.lead.failure consecutiveFailures={}", failures);
         if (failures >= circuitFailureThreshold) {
             circuitOpenedAt = Instant.now();
             consecutiveFailures.set(0);
+            circuitOpenCount.incrementAndGet();
+            circuitOpenCounter.increment();
+            log.error("conversionflow.lead.circuit.open");
         }
     }
 
@@ -140,5 +179,16 @@ public class ConversionFlowLeadClient {
             Thread.currentThread().interrupt();
             throw new ConversionFlowIntegrationException("conversionflow_retry_interrupted", interruptedException);
         }
+    }
+
+    public ConversionFlowClientDiagnostics diagnostics() {
+        return new ConversionFlowClientDiagnostics(
+                isCircuitOpen(),
+                consecutiveFailures.get(),
+                successCount.get(),
+                failureCount.get(),
+                retryCount.get(),
+                circuitOpenCount.get()
+        );
     }
 }
