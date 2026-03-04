@@ -61,7 +61,7 @@ public class UserRegisteredEventListener {
             log.info("auth.event.userRegistered.duplicate message={}", rawMessage);
         } catch (Exception exception) {
             log.error("auth.event.userRegistered.processing_error message={}", rawMessage, exception);
-            throw new RuntimeException("user_registered_event_processing_failed", exception);
+            throw new AuthAsyncEventProcessingException("user_registered_event_processing_failed", exception);
         }
     }
 
