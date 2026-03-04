@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nocountry.conversionflow.conversionflow_api.application.exception.DuplicateLeadException;
 import com.nocountry.conversionflow.conversionflow_api.application.exception.InvalidInputException;
 import com.nocountry.conversionflow.conversionflow_api.application.usecase.CreateLeadUseCase;
+import com.nocountry.conversionflow.conversionflow_api.infrastructure.messaging.idempotency.EventIdempotencyStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -16,10 +17,16 @@ public class UserRegisteredEventListener {
 
     private final ObjectMapper objectMapper;
     private final CreateLeadUseCase createLeadUseCase;
+    private final EventIdempotencyStore eventIdempotencyStore;
 
-    public UserRegisteredEventListener(ObjectMapper objectMapper, CreateLeadUseCase createLeadUseCase) {
+    public UserRegisteredEventListener(
+            ObjectMapper objectMapper,
+            CreateLeadUseCase createLeadUseCase,
+            EventIdempotencyStore eventIdempotencyStore
+    ) {
         this.objectMapper = objectMapper;
         this.createLeadUseCase = createLeadUseCase;
+        this.eventIdempotencyStore = eventIdempotencyStore;
     }
 
     @RabbitListener(queues = "${async.auth.user-registered-queue:auth.user.registered.v1}")
@@ -27,6 +34,11 @@ public class UserRegisteredEventListener {
         try {
             UserRegisteredEventEnvelope event = objectMapper.readValue(rawMessage, UserRegisteredEventEnvelope.class);
             validate(event);
+            String key = resolveIdempotencyKey(event);
+            if (!eventIdempotencyStore.tryMarkProcessed(key)) {
+                log.info("auth.event.userRegistered.duplicate_key key={} eventId={}", key, event.eventId());
+                return;
+            }
 
             UserRegisteredEventEnvelope.Payload payload = event.payload();
             UserRegisteredEventEnvelope.Attribution attribution = payload.attribution();
@@ -73,5 +85,12 @@ public class UserRegisteredEventListener {
 
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private String resolveIdempotencyKey(UserRegisteredEventEnvelope event) {
+        if (!isBlank(event.idempotencyKey())) {
+            return event.idempotencyKey();
+        }
+        return "eventId:" + event.eventId();
     }
 }
