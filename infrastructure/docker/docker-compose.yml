@@ -1,0 +1,133 @@
+name: conversionflow-stack
+
+services:
+  postgres-auth:
+    image: postgres:16-alpine
+    container_name: postgres-auth
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${AUTH_DB_NAME}
+      POSTGRES_USER: ${AUTH_DB_USER}
+      POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD}
+    ports:
+      - "${AUTH_DB_PORT}:5432"
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AUTH_DB_USER} -d ${AUTH_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - backend-net
+
+  postgres-conversion:
+    image: postgres:16-alpine
+    container_name: postgres-conversion
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${CONVERSION_DB_NAME}
+      POSTGRES_USER: ${CONVERSION_DB_USER}
+      POSTGRES_PASSWORD: ${CONVERSION_DB_PASSWORD}
+    ports:
+      - "${CONVERSION_DB_PORT}:5432"
+    volumes:
+      - postgres_conversion_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CONVERSION_DB_USER} -d ${CONVERSION_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - backend-net
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    ports:
+      - "${RABBITMQ_PORT}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - backend-net
+
+  authservice:
+    image: maven:3.9.9-eclipse-temurin-21
+    container_name: authservice
+    restart: unless-stopped
+    working_dir: /workspace
+    command: ["./mvnw", "spring-boot:run"]
+    env_file:
+      - ../../backend/authservice/.env
+    environment:
+      DB_URL: jdbc:postgresql://postgres-auth:5432/${AUTH_DB_NAME}
+      DB_USER: ${AUTH_DB_USER}
+      DB_PASS: ${AUTH_DB_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+    volumes:
+      - ../../backend/authservice:/workspace
+      - maven_cache:/root/.m2
+    ports:
+      - "${AUTHSERVICE_PORT}:8090"
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend-net
+
+  conversionflow:
+    image: maven:3.9.9-eclipse-temurin-21
+    container_name: conversionflow
+    restart: unless-stopped
+    working_dir: /workspace
+    command: ["./mvnw", "spring-boot:run"]
+    env_file:
+      - ../../backend/conversionflow/.env
+    environment:
+      DB_URL: jdbc:postgresql://postgres-conversion:5432/${CONVERSION_DB_NAME}
+      DB_USER: ${CONVERSION_DB_USER}
+      DB_PASS: ${CONVERSION_DB_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASS: ${RABBITMQ_PASS}
+    volumes:
+      - ../../backend/conversionflow:/workspace
+      - maven_cache:/root/.m2
+    ports:
+      - "${CONVERSIONFLOW_PORT}:8080"
+    depends_on:
+      postgres-conversion:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend-net
+
+networks:
+  backend-net:
+    driver: bridge
+
+volumes:
+  postgres_auth_data:
+  postgres_conversion_data:
+  rabbitmq_data:
+  maven_cache:
