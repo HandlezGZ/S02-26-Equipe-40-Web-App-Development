@@ -68,6 +68,7 @@ async:
   auth:
     exchange: ${ASYNC_AUTH_EXCHANGE:auth.events}
     user-registered-queue: ${ASYNC_AUTH_USER_REGISTERED_QUEUE:auth.user.registered.v1}
-    user-registered-retry-queue: ${ASYNC_AUTH_USER_REGISTERED_RETRY_QUEUE:auth.user.registered.v1.retry}
+    user-registered-routing-key: ${ASYNC_AUTH_USER_REGISTERED_ROUTING_KEY:user.registered.v1}
+    user-registered-retry-queue: ${ASYNC_AUTH_USER_REGISTERED_RETRY_QUEUE:user.registered.v1.retry}
     user-registered-dlq: ${ASYNC_AUTH_USER_REGISTERED_DLQ:auth.user.registered.v1.dlq}
     retry-delay-ms: ${ASYNC_AUTH_RETRY_DELAY_MS:30000}

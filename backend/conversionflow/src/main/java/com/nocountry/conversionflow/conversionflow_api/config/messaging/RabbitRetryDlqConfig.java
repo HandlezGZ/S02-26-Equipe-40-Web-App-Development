@@ -20,14 +20,14 @@ public class RabbitRetryDlqConfig {
 
     @Bean
     Queue userRegisteredRetryQueue(
-            @Value("${async.auth.user-registered-retry-queue:auth.user.registered.v1.retry}") String retryQueue,
-            @Value("${async.auth.user-registered-queue:auth.user.registered.v1}") String mainQueue,
+            @Value("${async.auth.user-registered-retry-queue:user.registered.v1.retry}") String retryQueue,
             @Value("${async.auth.exchange:auth.events}") String exchange,
+            @Value("${async.auth.user-registered-routing-key:user.registered.v1}") String mainRoutingKey,
             @Value("${async.auth.retry-delay-ms:30000}") int retryDelayMs
     ) {
         return new Queue(retryQueue, true, false, false, Map.of(
                 "x-dead-letter-exchange", exchange,
-                "x-dead-letter-routing-key", mainQueue,
+                "x-dead-letter-routing-key", mainRoutingKey,
                 "x-message-ttl", retryDelayMs
         ));
     }
@@ -43,7 +43,7 @@ public class RabbitRetryDlqConfig {
     Binding bindMainQueue(
             Queue userRegisteredQueue,
             DirectExchange authEventsExchange,
-            @Value("${async.auth.user-registered-queue:auth.user.registered.v1}") String mainRoutingKey
+            @Value("${async.auth.user-registered-routing-key:user.registered.v1}") String mainRoutingKey
     ) {
         return BindingBuilder.bind(userRegisteredQueue).to(authEventsExchange).with(mainRoutingKey);
     }
@@ -52,7 +52,7 @@ public class RabbitRetryDlqConfig {
     Binding bindRetryQueue(
             Queue userRegisteredRetryQueue,
             DirectExchange authEventsExchange,
-            @Value("${async.auth.user-registered-retry-queue:auth.user.registered.v1.retry}") String retryRoutingKey
+            @Value("${async.auth.user-registered-retry-queue:user.registered.v1.retry}") String retryRoutingKey
     ) {
         return BindingBuilder.bind(userRegisteredRetryQueue).to(authEventsExchange).with(retryRoutingKey);
     }

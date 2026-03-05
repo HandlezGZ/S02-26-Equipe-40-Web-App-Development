@@ -2,6 +2,7 @@ package com.nocountry.authservice.service;
 
 import com.nocountry.authservice.domain.User;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,7 @@ public class JwtService {
                 .expiration(Date.from(expiration))
                 .claim("email", user.getEmail())
                 .claim("provider", user.getProvider().name())
+                .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
