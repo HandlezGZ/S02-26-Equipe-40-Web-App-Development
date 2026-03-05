@@ -68,7 +68,7 @@ app:
     admin-user: ${GATEWAY_ADMIN_USER:gateway-admin}
     admin-pass: ${GATEWAY_ADMIN_PASS:change-me}
     jwt:
-      secret: ${AUTH_JWT_SECRET:placeholder-xxxx}
+      secret: ${AUTH_JWT_SECRET:change-me-change-me-change-me-change-me}
       issuer: ${AUTH_JWT_ISSUER:authservice-api}
       audience: ${AUTH_JWT_AUDIENCE:}
   rate-limit:
@@ -77,7 +77,7 @@ app:
     window-seconds: ${GATEWAY_RATE_LIMIT_WINDOW_SECONDS:60}
     timeout-ms: ${GATEWAY_RATE_LIMIT_TIMEOUT_MS:0}
   cors:
-    allowed-origins: ${GATEWAY_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174}
+    allowed-origins: ${GATEWAY_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:5174}
     allowed-methods: ${GATEWAY_CORS_ALLOWED_METHODS:GET,POST,PUT,PATCH,DELETE,OPTIONS}
     allowed-headers: ${GATEWAY_CORS_ALLOWED_HEADERS:Authorization,Content-Type,X-Correlation-Id}
     exposed-headers: ${GATEWAY_CORS_EXPOSED_HEADERS:X-Correlation-Id,X-RateLimit-Limit,X-RateLimit-Remaining,X-RateLimit-Window-Seconds,Retry-After}
