@@ -54,3 +54,7 @@ app:
   security:
     admin-user: ${GATEWAY_ADMIN_USER:gateway-admin}
     admin-pass: ${GATEWAY_ADMIN_PASS:change-me}
+    jwt:
+      secret: ${AUTH_JWT_SECRET:placeholder-xxxx}
+      issuer: ${AUTH_JWT_ISSUER:authservice-api}
+      audience: ${AUTH_JWT_AUDIENCE:}
