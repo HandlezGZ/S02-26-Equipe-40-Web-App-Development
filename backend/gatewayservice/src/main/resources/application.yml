@@ -67,6 +67,11 @@ app:
       secret: ${AUTH_JWT_SECRET:placeholder-xxxx}
       issuer: ${AUTH_JWT_ISSUER:authservice-api}
       audience: ${AUTH_JWT_AUDIENCE:}
+  rate-limit:
+    enabled: ${GATEWAY_RATE_LIMIT_ENABLED:true}
+    requests-per-window: ${GATEWAY_RATE_LIMIT_REQUESTS_PER_WINDOW:60}
+    window-seconds: ${GATEWAY_RATE_LIMIT_WINDOW_SECONDS:60}
+    timeout-ms: ${GATEWAY_RATE_LIMIT_TIMEOUT_MS:0}
 
 resilience4j:
   circuitbreaker:
