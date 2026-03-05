@@ -2,6 +2,7 @@ package com.nocountry.authservice.security;
 
 import com.nocountry.authservice.dto.AuthTokenResponse;
 import com.nocountry.authservice.service.AuthService;
+import com.nocountry.authservice.service.outbox.UserRegisteredEventPayload;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,12 +20,15 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
     private final AuthService authService;
     private final String successRedirectUri;
+    private final OAuth2AttributionCookieService attributionCookieService;
 
     public OAuth2AuthenticationSuccessHandler(
             AuthService authService,
+            OAuth2AttributionCookieService attributionCookieService,
             @Value("${app.oauth2.success-redirect-uri}") String successRedirectUri
     ) {
         this.authService = authService;
+        this.attributionCookieService = attributionCookieService;
         this.successRedirectUri = successRedirectUri;
     }
 
@@ -48,7 +52,9 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             return;
         }
 
-        AuthTokenResponse token = authService.loginWithGoogle(email, subject);
+        UserRegisteredEventPayload.Attribution attribution = attributionCookieService.readAttribution(request);
+        attributionCookieService.clear(response, request.isSecure());
+        AuthTokenResponse token = authService.loginWithGoogle(email, subject, attribution);
 
         String redirect = UriComponentsBuilder.fromUriString(successRedirectUri)
                 .queryParam("accessToken", token.accessToken())

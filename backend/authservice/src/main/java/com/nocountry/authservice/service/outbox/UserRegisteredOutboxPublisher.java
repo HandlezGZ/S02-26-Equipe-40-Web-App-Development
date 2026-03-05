@@ -8,6 +8,9 @@ import com.nocountry.authservice.repository.outbox.OutboxEventRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 @Service
 public class UserRegisteredOutboxPublisher {
 
@@ -35,20 +38,29 @@ public class UserRegisteredOutboxPublisher {
                 user.getProvider().name(),
                 attribution
         );
+        UserRegisteredEventEnvelope envelope = new UserRegisteredEventEnvelope(
+                UUID.randomUUID().toString(),
+                "1",
+                EVENT_TYPE,
+                OffsetDateTime.now().toString(),
+                null,
+                idempotencyKey,
+                payload
+        );
 
         OutboxEvent event = new OutboxEvent();
         event.setEventType(EVENT_TYPE);
         event.setAggregateType(AGGREGATE_TYPE);
         event.setAggregateId(user.getId().toString());
         event.setIdempotencyKey(idempotencyKey);
-        event.setPayloadJson(toJson(payload));
+        event.setPayloadJson(toJson(envelope));
 
         outboxEventRepository.save(event);
     }
 
-    private String toJson(UserRegisteredEventPayload payload) {
+    private String toJson(UserRegisteredEventEnvelope envelope) {
         try {
-            return objectMapper.writeValueAsString(payload);
+            return objectMapper.writeValueAsString(envelope);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("user_registered_payload_serialization_failed", exception);
         }
