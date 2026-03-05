@@ -11,6 +11,11 @@ spring:
           uri: ${AUTHSERVICE_BASE_URL:http://localhost:8090}
           predicates:
             - Path=/api/v1/auth/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: authServiceCircuit
+                fallbackUri: forward:/internal/v1/gateway/fallback/authservice
           metadata:
             connect-timeout: ${GATEWAY_AUTH_CONNECT_TIMEOUT_MS:1000}
             response-timeout: ${GATEWAY_AUTH_RESPONSE_TIMEOUT_MS:3000}
@@ -27,6 +32,10 @@ spring:
             - Path=/api/v1/leads/**,/api/v1/checkout/**,/api/v1/webhooks/**,/api/v1/pixel-events/**
           filters:
             - RewritePath=/api/v1/(?<segment>.*), /${segment}
+            - name: CircuitBreaker
+              args:
+                name: conversionflowCircuit
+                fallbackUri: forward:/internal/v1/gateway/fallback/conversionflow
             - name: Retry
               args:
                 retries: ${GATEWAY_CONVERSIONFLOW_RETRY_ATTEMPTS:1}
@@ -58,3 +67,23 @@ app:
       secret: ${AUTH_JWT_SECRET:placeholder-xxxx}
       issuer: ${AUTH_JWT_ISSUER:authservice-api}
       audience: ${AUTH_JWT_AUDIENCE:}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      authServiceCircuit:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: ${GATEWAY_AUTH_CB_WINDOW_SIZE:10}
+        minimumNumberOfCalls: ${GATEWAY_AUTH_CB_MIN_CALLS:5}
+        permittedNumberOfCallsInHalfOpenState: ${GATEWAY_AUTH_CB_HALF_OPEN_CALLS:3}
+        waitDurationInOpenState: ${GATEWAY_AUTH_CB_OPEN_MS:30000}ms
+        failureRateThreshold: ${GATEWAY_AUTH_CB_FAILURE_RATE:50}
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+      conversionflowCircuit:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: ${GATEWAY_CONVERSIONFLOW_CB_WINDOW_SIZE:10}
+        minimumNumberOfCalls: ${GATEWAY_CONVERSIONFLOW_CB_MIN_CALLS:5}
+        permittedNumberOfCallsInHalfOpenState: ${GATEWAY_CONVERSIONFLOW_CB_HALF_OPEN_CALLS:3}
+        waitDurationInOpenState: ${GATEWAY_CONVERSIONFLOW_CB_OPEN_MS:30000}ms
+        failureRateThreshold: ${GATEWAY_CONVERSIONFLOW_CB_FAILURE_RATE:50}
+        automaticTransitionFromOpenToHalfOpenEnabled: true
