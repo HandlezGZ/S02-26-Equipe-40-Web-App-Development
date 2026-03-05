@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: gatewayservice-api
+
+server:
+  port: ${SERVER_PORT:8070}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
