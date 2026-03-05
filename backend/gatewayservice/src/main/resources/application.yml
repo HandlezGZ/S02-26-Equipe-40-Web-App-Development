@@ -1,6 +1,40 @@
 spring:
   application:
     name: gatewayservice-api
+  cloud:
+    gateway:
+      httpclient:
+        connect-timeout: ${GATEWAY_DEFAULT_CONNECT_TIMEOUT_MS:1000}
+        response-timeout: ${GATEWAY_DEFAULT_RESPONSE_TIMEOUT_MS:4000ms}
+      routes:
+        - id: auth-api
+          uri: ${AUTHSERVICE_BASE_URL:http://localhost:8090}
+          predicates:
+            - Path=/api/v1/auth/**
+          metadata:
+            connect-timeout: ${GATEWAY_AUTH_CONNECT_TIMEOUT_MS:1000}
+            response-timeout: ${GATEWAY_AUTH_RESPONSE_TIMEOUT_MS:3000}
+        - id: auth-oauth
+          uri: ${AUTHSERVICE_BASE_URL:http://localhost:8090}
+          predicates:
+            - Path=/oauth2/**,/login/oauth2/**
+          metadata:
+            connect-timeout: ${GATEWAY_AUTH_CONNECT_TIMEOUT_MS:1000}
+            response-timeout: ${GATEWAY_AUTH_RESPONSE_TIMEOUT_MS:3000}
+        - id: conversionflow-api
+          uri: ${CONVERSIONFLOW_BASE_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/v1/leads/**,/api/v1/checkout/**,/api/v1/webhooks/**,/api/v1/pixel-events/**
+          filters:
+            - RewritePath=/api/v1/(?<segment>.*), /${segment}
+            - name: Retry
+              args:
+                retries: ${GATEWAY_CONVERSIONFLOW_RETRY_ATTEMPTS:1}
+                statuses: BAD_GATEWAY,GATEWAY_TIMEOUT,SERVICE_UNAVAILABLE
+                methods: GET,HEAD
+          metadata:
+            connect-timeout: ${GATEWAY_CONVERSIONFLOW_CONNECT_TIMEOUT_MS:1000}
+            response-timeout: ${GATEWAY_CONVERSIONFLOW_RESPONSE_TIMEOUT_MS:4000}
 
 server:
   port: ${SERVER_PORT:8070}
@@ -15,3 +49,8 @@ management:
       probes:
         enabled: true
       show-details: always
+
+app:
+  security:
+    admin-user: ${GATEWAY_ADMIN_USER:gateway-admin}
+    admin-pass: ${GATEWAY_ADMIN_PASS:change-me}
