@@ -2,12 +2,14 @@ package com.nocountry.authservice.config;
 
 import com.nocountry.authservice.security.OAuth2AuthenticationFailureHandler;
 import com.nocountry.authservice.security.OAuth2AuthenticationSuccessHandler;
+import com.nocountry.authservice.security.OAuth2AttributionCaptureFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -15,13 +17,16 @@ public class SecurityConfig {
 
     private final OAuth2AuthenticationSuccessHandler successHandler;
     private final OAuth2AuthenticationFailureHandler failureHandler;
+    private final OAuth2AttributionCaptureFilter attributionCaptureFilter;
 
     public SecurityConfig(
             OAuth2AuthenticationSuccessHandler successHandler,
-            OAuth2AuthenticationFailureHandler failureHandler
+            OAuth2AuthenticationFailureHandler failureHandler,
+            OAuth2AttributionCaptureFilter attributionCaptureFilter
     ) {
         this.successHandler = successHandler;
         this.failureHandler = failureHandler;
+        this.attributionCaptureFilter = attributionCaptureFilter;
     }
 
     @Bean
@@ -51,6 +56,7 @@ public class SecurityConfig {
                         .successHandler(successHandler)
                         .failureHandler(failureHandler)
                 )
+                .addFilterBefore(attributionCaptureFilter, OAuth2AuthorizationRequestRedirectFilter.class)
                 .build();
     }
 

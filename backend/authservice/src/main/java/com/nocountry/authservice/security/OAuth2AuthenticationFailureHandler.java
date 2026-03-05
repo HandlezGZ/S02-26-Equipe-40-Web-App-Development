@@ -15,10 +15,13 @@ import java.io.IOException;
 public class OAuth2AuthenticationFailureHandler implements AuthenticationFailureHandler {
 
     private final String failureRedirectUri;
+    private final OAuth2AttributionCookieService attributionCookieService;
 
     public OAuth2AuthenticationFailureHandler(
+            OAuth2AttributionCookieService attributionCookieService,
             @Value("${app.oauth2.failure-redirect-uri}") String failureRedirectUri
     ) {
+        this.attributionCookieService = attributionCookieService;
         this.failureRedirectUri = failureRedirectUri;
     }
 
@@ -28,6 +31,7 @@ public class OAuth2AuthenticationFailureHandler implements AuthenticationFailure
             HttpServletResponse response,
             AuthenticationException exception
     ) throws IOException, ServletException {
+        attributionCookieService.clear(response, request.isSecure());
         String redirect = UriComponentsBuilder.fromUriString(failureRedirectUri)
                 .queryParam("error", "google_auth_failed")
                 .build()

@@ -108,7 +108,11 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthTokenResponse loginWithGoogle(String email, String googleSubject) {
+    public AuthTokenResponse loginWithGoogle(
+            String email,
+            String googleSubject,
+            UserRegisteredEventPayload.Attribution attribution
+    ) {
         String normalizedEmail = email.trim().toLowerCase();
 
         Optional<User> byGoogleSubject = userRepository.findByGoogleSubject(googleSubject);
@@ -131,14 +135,7 @@ public class AuthService {
         }
 
         if (createdNewUser) {
-            userRegisteredOutboxPublisher.publish(user, new UserRegisteredEventPayload.Attribution(
-                    null,
-                    null,
-                    null,
-                    null,
-                    "google",
-                    null
-            ));
+            userRegisteredOutboxPublisher.publish(user, attribution);
         }
 
         String token = jwtService.generateAccessToken(user);
