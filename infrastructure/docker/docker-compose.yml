@@ -42,6 +42,25 @@ services:
       start_period: 10s
     networks:
       - backend-net
+  
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: unless-stopped
+    ports:
+      - "8100:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+      postgres-conversion:
+        condition: service_healthy
+    networks:
+      - backend-net
 
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
@@ -122,6 +141,33 @@ services:
     networks:
       - backend-net
 
+  gatewayservice:
+    image: maven:3.9.9-eclipse-temurin-21
+    container_name: gatewayservice
+    restart: unless-stopped
+    working_dir: /workspace
+    command: ["./mvnw", "spring-boot:run"]
+    environment:
+      SERVER_PORT: 8070
+      AUTHSERVICE_BASE_URL: http://authservice:8090
+      CONVERSIONFLOW_BASE_URL: http://conversionflow:8080
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:-change-me-change-me-change-me-change-me}
+      AUTH_JWT_ISSUER: ${AUTH_JWT_ISSUER:-authservice-api}
+      GATEWAY_ADMIN_USER: ${GATEWAY_ADMIN_USER:-gateway-admin}
+      GATEWAY_ADMIN_PASS: ${GATEWAY_ADMIN_PASS:-change-me}
+    volumes:
+      - ../../backend/gatewayservice:/workspace
+      - maven_cache:/root/.m2
+    ports:
+      - "${GATEWAY_PORT:-8070}:8070"
+    depends_on:
+      authservice:
+        condition: service_started
+      conversionflow:
+        condition: service_started
+    networks:
+      - backend-net
+
 networks:
   backend-net:
     driver: bridge
@@ -129,5 +175,6 @@ networks:
 volumes:
   postgres_auth_data:
   postgres_conversion_data:
+  pgadmin_data:
   rabbitmq_data:
   maven_cache:
