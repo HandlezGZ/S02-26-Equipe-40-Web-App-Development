@@ -1,6 +1,5 @@
 package com.nocountry.conversionflow.conversionflow_api.application.usecase;
 
-import com.nocountry.conversionflow.conversionflow_api.application.exception.DuplicateLeadException;
 import com.nocountry.conversionflow.conversionflow_api.domain.entity.Lead;
 import com.nocountry.conversionflow.conversionflow_api.domain.repository.LeadRepository;
 import org.slf4j.Logger;
@@ -29,9 +28,20 @@ public class CreateLeadUseCase {
             String utmCampaign
     ) {
         log.info("usecase.createLead.start externalId={} email={}", externalId, email);
-        if (leadRepository.existsByExternalId(externalId)) {
-            log.warn("usecase.createLead.duplicate externalId={}", externalId);
-            throw new DuplicateLeadException("Lead already exists with this externalId");
+        Lead existingByExternalId = leadRepository.findByExternalId(externalId).orElse(null);
+        if (existingByExternalId != null) {
+            existingByExternalId.updateTracking(gclid, fbclid, fbp, fbc, utmSource, utmCampaign);
+            Lead updatedLead = leadRepository.save(existingByExternalId);
+            log.info("usecase.createLead.idempotent.externalId leadId={} externalId={}", updatedLead.getId(), updatedLead.getExternalId());
+            return updatedLead;
+        }
+
+        Lead existingByEmail = leadRepository.findByEmail(email).orElse(null);
+        if (existingByEmail != null) {
+            existingByEmail.updateTracking(gclid, fbclid, fbp, fbc, utmSource, utmCampaign);
+            Lead updatedLead = leadRepository.save(existingByEmail);
+            log.info("usecase.createLead.idempotent.email leadId={} email={}", updatedLead.getId(), updatedLead.getEmail());
+            return updatedLead;
         }
 
         Lead lead = new Lead(externalId, email);
