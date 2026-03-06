@@ -6,16 +6,13 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/conversionflow}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASS:admin}
+    url: ${DB_URL:}
+    username: ${DB_USER:}
+    password: ${DB_PASS:}
     driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
 
   jpa:
-    show-sql: ${JPA_SHOW_SQL:true}
+    show-sql: ${JPA_SHOW_SQL:false}
     hibernate:
       ddl-auto: validate
     properties:
@@ -23,33 +20,38 @@ spring:
         format_sql: true
 
   flyway:
-    enabled: true
+    enabled: ${FLYWAY_ENABLED:true}
     locations: classpath:db/migration
 
 stripe:
-  secret-key: ${STRIPE_SECRET_KEY}
-  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
-
-  # URLs do checkout
+  secret-key: ${STRIPE_SECRET_KEY:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
   success-url: ${CHECKOUT_SUCCESS_URL:http://localhost:3000/sucesso}
   cancel-url: ${CHECKOUT_CANCEL_URL:http://localhost:3000/cancelado}
-
   currency: ${STRIPE_CURRENCY:usd}
-
-  # Mapeamento plan -> priceId
   prices:
-    incorporation_basic: ${STRIPE_PRICE_INCORPORATION_BASIC}
-    incorporation_premium: ${STRIPE_PRICE_INCORPORATION_PREMIUM}
-    accounting_monthly: ${STRIPE_PRICE_ACCOUNTING_MONTHLY}
+    incorporation_basic: ${STRIPE_PRICE_INCORPORATION_BASIC:}
+    incorporation_premium: ${STRIPE_PRICE_INCORPORATION_PREMIUM:}
+    accounting_monthly: ${STRIPE_PRICE_ACCOUNTING_MONTHLY:}
 
 meta:
-  access-token: ${META_ACCESS_TOKEN}
-  pixel-id: ${META_PIXEL_ID}
+  access-token: ${META_ACCESS_TOKEN:}
+  pixel-id: ${META_PIXEL_ID:}
 
 google:
   ads:
-    conversion-id: ${GOOGLE_ADS_CONVERSION_ID}
-    conversion-label: ${GOOGLE_ADS_CONVERSION_LABEL}
+    conversion-id: ${GOOGLE_ADS_CONVERSION_ID:}
+    conversion-label: ${GOOGLE_ADS_CONVERSION_LABEL:}
+    api:
+      api-version: ${GOOGLE_ADS_API_VERSION:v23}
+      developer-token: ${GOOGLE_ADS_DEVELOPER_TOKEN:}
+      customer-id: ${GOOGLE_ADS_CUSTOMER_ID:}
+      login-customer-id: ${GOOGLE_ADS_LOGIN_CUSTOMER_ID:}
+      conversion-action-resource-name: ${GOOGLE_ADS_CONVERSION_ACTION_RESOURCE_NAME:}
+      oauth-client-id: ${GOOGLE_ADS_OAUTH_CLIENT_ID:}
+      oauth-client-secret: ${GOOGLE_ADS_OAUTH_CLIENT_SECRET:}
+      oauth-refresh-token: ${GOOGLE_ADS_OAUTH_REFRESH_TOKEN:}
+      access-token: ${GOOGLE_ADS_ACCESS_TOKEN:}
 
 pipedrive:
-  api-token: ${PIPEDRIVE_API_TOKEN}
+  api-token: ${PIPEDRIVE_API_TOKEN:}OKEN}

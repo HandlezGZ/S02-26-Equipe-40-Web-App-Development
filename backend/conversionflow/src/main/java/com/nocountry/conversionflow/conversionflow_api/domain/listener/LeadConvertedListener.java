@@ -9,6 +9,8 @@ import com.nocountry.conversionflow.conversionflow_api.domain.repository.Convers
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionPhase;
 
@@ -25,6 +27,7 @@ public class LeadConvertedListener {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleLeadConverted(LeadConvertedEvent event) {
         log.info("lead.converted.event received leadId={} paymentIntentId={}",
                 event.getLeadId(), event.getPaymentIntentId());

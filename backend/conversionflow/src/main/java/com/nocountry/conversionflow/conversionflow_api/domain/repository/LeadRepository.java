@@ -13,19 +13,10 @@ import java.util.List;
 
 public interface LeadRepository extends JpaRepository<Lead, Long> {
 
-    /**
-     * Buscar lead pelo ID externo (ex: Webflow, frontend)
-     */
     Optional<Lead> findByExternalId(String externalId);
 
-    /**
-     * Buscar lead pelo e-mail
-     */
     Optional<Lead> findByEmail(String email);
 
-    /**
-     * Verificar se já existe lead com esse externalId
-     */
     boolean existsByExternalId(String externalId);
 
     long countByStatus(LeadStatus status);

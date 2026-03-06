@@ -1,0 +1,2 @@
+ALTER TABLE leads
+    ALTER COLUMN external_id DROP NOT NULL;

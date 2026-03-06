@@ -26,7 +26,7 @@ public class StripeWebhookController {
                 payload == null ? 0 : payload.length(),
                 sigHeader != null && !sigHeader.isBlank());
 
-        stripeWebhookService.handleWebhook(payload, sigHeader);
+        stripeWebhookService.process(payload, sigHeader);
 
         log.info("stripe.webhook.request processed");
         return ResponseEntity.ok("ok");

@@ -11,6 +11,17 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.*;
 
+/**
+ * Cliente simples (MVP) para Meta Conversions API (CAPI).
+ *
+ * Endpoint:
+ *   POST https://graph.facebook.com/v18.0/{PIXEL_ID}/events?access_token=...
+ *
+ * Campos importantes:
+ * - event_id para dedupe (ideal: paymentIntentId)
+ * - user_data: em (hash sha256), fbp, fbc
+ * - custom_data: value, currency
+ */
 @Component
 public class MetaGraphApiClient implements MetaApiClient {
 
@@ -52,20 +63,42 @@ public class MetaGraphApiClient implements MetaApiClient {
 
     private Map<String, Object> buildPayload(LeadConvertedEvent event) {
 
-        Map<String, Object> userData = new HashMap<>();
+        Map<String, Object> userData = new LinkedHashMap<>();
 
-        if (event.getEmail() != null) {
-            userData.put("em", hash(event.getEmail().trim().toLowerCase()));
+        // email hash (sha256 lower(trim(email)))
+        if (event.getEmail() != null && !event.getEmail().isBlank()) {
+            userData.put("em", List.of(hash(event.getEmail().trim().toLowerCase(Locale.ROOT))));
         }
 
-        Map<String, Object> customData = new HashMap<>();
-        customData.put("currency", "USD");
-        customData.put("value", event.getConvertedAmount());
+        // fbp / fbc aumentam bastante match rate (não são hash)
+        if (event.getFbp() != null && !event.getFbp().isBlank()) {
+            userData.put("fbp", event.getFbp());
+        }
+        if (event.getFbc() != null && !event.getFbc().isBlank()) {
+            userData.put("fbc", event.getFbc());
+        }
 
-        Map<String, Object> eventData = new HashMap<>();
+        // custom_data
+        Map<String, Object> customData = new LinkedHashMap<>();
+        customData.put("value", event.getConvertedAmount());
+        customData.put("currency", normalizeCurrency(event.getCurrency()));
+
+        // event_time: use convertedAt quando disponível (melhor para auditoria)
+        long eventTime = Instant.now().getEpochSecond();
+        if (event.getConvertedAt() != null) {
+            eventTime = event.getConvertedAt().toInstant().getEpochSecond();
+        }
+
+        Map<String, Object> eventData = new LinkedHashMap<>();
         eventData.put("event_name", "Purchase");
-        eventData.put("event_time", Instant.now().getEpochSecond());
+        eventData.put("event_time", eventTime);
         eventData.put("action_source", "website");
+
+        // event_id para dedupe Pixel + CAPI (ideal: payment_intent id)
+        if (event.getPaymentIntentId() != null && !event.getPaymentIntentId().isBlank()) {
+            eventData.put("event_id", event.getPaymentIntentId());
+        }
+
         eventData.put("user_data", userData);
         eventData.put("custom_data", customData);
 
@@ -73,6 +106,11 @@ public class MetaGraphApiClient implements MetaApiClient {
         payload.put("data", Collections.singletonList(eventData));
 
         return payload;
+    }
+
+    private String normalizeCurrency(String currency) {
+        if (currency == null || currency.isBlank()) return "BRL";
+        return currency.trim().toUpperCase(Locale.ROOT);
     }
 
     private String hash(String value) {
