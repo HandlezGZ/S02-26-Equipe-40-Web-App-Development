@@ -58,7 +58,6 @@ A interface atua como a vitrine do produto, adotando a estética *Dark Mode* com
 1. **Landing Page:** *Hero section* impactante focada em conversão com rolagem fluida.
 2. **Autenticação (`NexusAuthPage`):** Captura de leads dinâmica integrada à API.
 3. **Pricing (`PricingCardsPalette`):** Layout interativo que envia o usuário diretamente ao checkout do Stripe.
-4. **Dashboard:** Painel do usuário utilizando SVGs dinâmicos para exibir o status da LLC e integrações.
 
 ---
 
